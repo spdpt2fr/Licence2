@@ -1,13 +1,13 @@
-const STORAGE_KEY = 'licences';
+const API_URL = '/api/licences';
 let licences = [];
 
-function loadLicences() {
-  const data = localStorage.getItem(STORAGE_KEY);
-  licences = data ? JSON.parse(data) : [];
-}
-
-function saveLicences() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(licences));
+async function loadLicences() {
+  try {
+    const res = await fetch(API_URL);
+    licences = res.ok ? await res.json() : [];
+  } catch {
+    licences = [];
+  }
 }
 
 function renderLicences(filter = '') {
@@ -101,9 +101,9 @@ function editLicence(id) {
   if (licence) openForm(true, licence);
 }
 
-function deleteLicence(id) {
-  licences = licences.filter(l => l.id !== id);
-  saveLicences();
+async function deleteLicence(id) {
+  await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+  await loadLicences();
   renderLicences(document.getElementById('search').value);
   showAlerts();
 }
@@ -129,16 +129,31 @@ document.getElementById('licenceForm').addEventListener('submit', e => {
     initialCost: parseFloat(document.getElementById('initialCost').value),
     assignedTo: document.getElementById('assignedTo').value
   };
-  const index = licences.findIndex(l => l.id === id);
-  if (index >= 0) licences[index] = licence; else licences.push(licence);
-  saveLicences();
+  if (id) {
+    await fetch(`${API_URL}/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(licence)
+    });
+  } else {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(licence)
+    });
+    if (res.ok) {
+      const saved = await res.json();
+      licence.id = saved.id;
+    }
+  }
+  await loadLicences();
   closeForm();
   renderLicences(document.getElementById('search').value);
   showAlerts();
 });
 
-window.addEventListener('DOMContentLoaded', () => {
-  loadLicences();
+window.addEventListener('DOMContentLoaded', async () => {
+  await loadLicences();
   renderLicences();
   showAlerts();
 });
