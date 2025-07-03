@@ -1,0 +1,70 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background: #f5f7fa;
+  color: #333;
+}
+.container {
+  width: 90%;
+  max-width: 1000px;
+  margin: 20px auto;
+  background: #fff;
+  padding: 20px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+#licenceTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+#licenceTable th,
+#licenceTable td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+}
+#licenceTable th {
+  background: #f0f0f0;
+}
+.hidden {
+  display: none;
+}
+#licenceForm {
+  margin-top: 20px;
+  border: 1px solid #ddd;
+  padding: 15px;
+  background: #fafafa;
+}
+.alerts {
+  margin-bottom: 10px;
+}
+.alert {
+  padding: 8px;
+  margin-bottom: 5px;
+  border-radius: 4px;
+  color: #fff;
+}
+.alert.warn { background: #f0ad4e; }
+.alert.danger { background: #d9534f; }
+.alert.safe { background: #5cb85c; }
+
+.status-expired {
+  background: #f2dede;
+}
+.status-warning {
+  background: #fcf8e3;
+}
+.form-actions {
+  margin-top: 10px;
+  display: flex;
+  gap: 10px;
+}
