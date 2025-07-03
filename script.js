@@ -5,7 +5,8 @@ async function loadLicences() {
   try {
     const res = await fetch(API_URL);
     licences = res.ok ? await res.json() : [];
-  } catch {
+  } catch (error) {
+    console.error('Erreur lors du chargement des licences:', error);
     licences = [];
   }
 }
@@ -102,10 +103,18 @@ function editLicence(id) {
 }
 
 async function deleteLicence(id) {
-  await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
-  await loadLicences();
-  renderLicences(document.getElementById('search').value);
-  showAlerts();
+  try {
+    const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+    if (!response.ok) {
+      throw new Error('Erreur lors de la suppression');
+    }
+    await loadLicences();
+    renderLicences(document.getElementById('search').value);
+    showAlerts();
+  } catch (error) {
+    console.error('Erreur lors de la suppression:', error);
+    alert('Erreur lors de la suppression de la licence');
+  }
 }
 
 document.getElementById('newLicence').addEventListener('click', () => openForm());
@@ -114,42 +123,60 @@ document.getElementById('search').addEventListener('input', e => {
   renderLicences(e.target.value);
 });
 
-document.getElementById('licenceForm').addEventListener('submit', e => {
+// ✅ CORRECTION : Ajout de async à l'event listener
+document.getElementById('licenceForm').addEventListener('submit', async e => {
   e.preventDefault();
-  const id = document.getElementById('licenceId').value;
-  const licence = {
-    id: id || Date.now().toString(),
-    softwareName: document.getElementById('softwareName').value,
-    vendor: document.getElementById('vendor').value,
-    version: document.getElementById('version').value,
-    type: document.getElementById('type').value,
-    seats: parseInt(document.getElementById('seats').value, 10),
-    purchaseDate: document.getElementById('purchaseDate').value,
-    expirationDate: document.getElementById('expirationDate').value,
-    initialCost: parseFloat(document.getElementById('initialCost').value),
-    assignedTo: document.getElementById('assignedTo').value
-  };
-  if (id) {
-    await fetch(`${API_URL}/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(licence)
-    });
-  } else {
-    const res = await fetch(API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(licence)
-    });
-    if (res.ok) {
-      const saved = await res.json();
+  
+  try {
+    const id = document.getElementById('licenceId').value;
+    const licence = {
+      id: id || Date.now().toString(),
+      softwareName: document.getElementById('softwareName').value,
+      vendor: document.getElementById('vendor').value,
+      version: document.getElementById('version').value,
+      type: document.getElementById('type').value,
+      seats: parseInt(document.getElementById('seats').value, 10),
+      purchaseDate: document.getElementById('purchaseDate').value,
+      expirationDate: document.getElementById('expirationDate').value,
+      initialCost: parseFloat(document.getElementById('initialCost').value),
+      assignedTo: document.getElementById('assignedTo').value
+    };
+    
+    let response;
+    if (id) {
+      // Modification d'une licence existante
+      response = await fetch(`${API_URL}/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(licence)
+      });
+    } else {
+      // Création d'une nouvelle licence
+      response = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(licence)
+      });
+    }
+    
+    if (!response.ok) {
+      throw new Error('Erreur lors de la sauvegarde');
+    }
+    
+    if (!id) {
+      const saved = await response.json();
       licence.id = saved.id;
     }
+    
+    await loadLicences();
+    closeForm();
+    renderLicences(document.getElementById('search').value);
+    showAlerts();
+    
+  } catch (error) {
+    console.error('Erreur lors de la sauvegarde:', error);
+    alert('Erreur lors de la sauvegarde de la licence');
   }
-  await loadLicences();
-  closeForm();
-  renderLicences(document.getElementById('search').value);
-  showAlerts();
 });
 
 window.addEventListener('DOMContentLoaded', async () => {
