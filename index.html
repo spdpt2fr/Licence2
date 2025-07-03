@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestion de licences</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Tableau de bord IT</h1>
+    </header>
+    <section id="alerts" class="alerts"></section>
+
+    <div class="toolbar">
+      <button id="newLicence">Ajouter une licence</button>
+      <input type="text" id="search" placeholder="Recherche...">
+    </div>
+
+    <table id="licenceTable">
+      <thead>
+        <tr>
+          <th>Nom logiciel</th>
+          <th>Éditeur</th>
+          <th>Version</th>
+          <th>Type</th>
+          <th>Utilisateurs</th>
+          <th>Expiration</th>
+          <th>Coût</th>
+          <th>Assignée à</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <form id="licenceForm" class="hidden">
+      <h2 id="formTitle">Nouvelle licence</h2>
+      <input type="hidden" id="licenceId">
+      <label>
+        Nom du logiciel
+        <input type="text" id="softwareName" required>
+      </label>
+      <label>
+        Éditeur
+        <input type="text" id="vendor" required>
+      </label>
+      <label>
+        Version
+        <input type="text" id="version" required>
+      </label>
+      <label>
+        Type
+        <select id="type">
+          <option value="perpetuelle">Perpétuelle</option>
+          <option value="abonnement">Abonnement</option>
+          <option value="utilisateur">Par utilisateur</option>
+        </select>
+      </label>
+      <label>
+        Nombre de licences
+        <input type="number" id="seats" min="1" value="1" required>
+      </label>
+      <label>
+        Date d'achat
+        <input type="date" id="purchaseDate" required>
+      </label>
+      <label>
+        Date d'expiration
+        <input type="date" id="expirationDate" required>
+      </label>
+      <label>
+        Coût initial
+        <input type="number" id="initialCost" min="0" step="0.01" required>
+      </label>
+      <label>
+        Assignée à (employé/département)
+        <input type="text" id="assignedTo">
+      </label>
+      <div class="form-actions">
+        <button type="submit">Enregistrer</button>
+        <button type="button" id="cancelForm">Annuler</button>
+      </div>
+    </form>
+  </div>
+  <script src="script.js"></script>
+</body>
+</html>
