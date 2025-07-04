@@ -241,6 +241,7 @@
     <script>
       document.addEventListener("DOMContentLoaded", async () => {
         try {
+          // Ensure we call the global Auth instance
           await window.Auth.init();
         } catch (err) {
           console.error("Erreur init Auth", err);
