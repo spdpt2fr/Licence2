@@ -1,0 +1,13 @@
+{
+  "name": "licence2",
+  "version": "1.0.0",
+  "description": "**Gestionnaire de licences logicielles simplifié** - Version frontend pur avec Supabase",
+  "main": "api.js",
+  "scripts": {
+    "test": "node --test"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs"
+}
