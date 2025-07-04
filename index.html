@@ -242,9 +242,13 @@
     <script>
       document.addEventListener("DOMContentLoaded", async () => {
         try {
-          await Auth.init();
+          if (window.Auth && typeof window.Auth.init === 'function') {
+            await window.Auth.init();
+          } else {
+            throw new Error('Module Auth non chargé');
+          }
         } catch (err) {
-          console.error("Erreur init Auth", err);
+          console.error('Erreur init Auth', err);
         }
 
         const loginPage = document.getElementById("loginPage");
