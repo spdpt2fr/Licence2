@@ -151,16 +151,12 @@ class LicenceApp {
       let message = '';
       
       if (diff < 0) {
+        // Licences expirées -> ROUGE
         level = 'danger';
         message = `${licence.softwareName} a expiré il y a ${Math.abs(diff)} jour(s)`;
-      } else if (diff <= 7) {
-        level = 'danger';
-        message = `${licence.softwareName} expire dans ${diff} jour(s)`;
-      } else if (diff <= 15) {
-        level = 'warn';
-        message = `${licence.softwareName} expire dans ${diff} jour(s)`;
       } else if (diff <= 30) {
-        level = 'safe';
+        // Licences qui vont expirer -> JAUNE
+        level = 'warn';
         message = `${licence.softwareName} expire dans ${diff} jour(s)`;
       }
       
@@ -169,9 +165,9 @@ class LicenceApp {
       }
     });
     
-    // Trier par priorité (danger > warn > safe)
+    // Trier par priorité (danger > warn)
     alerts.sort((a, b) => {
-      const priority = { danger: 3, warn: 2, safe: 1 };
+      const priority = { danger: 2, warn: 1 };
       return priority[b.level] - priority[a.level];
     });
     
