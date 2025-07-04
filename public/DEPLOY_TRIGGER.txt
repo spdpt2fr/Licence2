@@ -1,0 +1,2 @@
+Deployment trigger: 2025-07-04 14:10 - CSS modal fixes deployment
+This file forces Netlify to redeploy with the new CSS modular architecture.
