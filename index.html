@@ -241,7 +241,7 @@
     <script>
       document.addEventListener("DOMContentLoaded", async () => {
         try {
-          await Auth.init();
+          await window.Auth.init();
         } catch (err) {
           console.error("Erreur init Auth", err);
         }
@@ -264,8 +264,8 @@
           document.getElementById("userForm").classList.add("hidden");
         };
 
-        if (Auth.currentUser) {
-          if (Auth.currentUser.must_change) {
+        if (window.Auth.currentUser) {
+          if (window.Auth.currentUser.must_change) {
             passwordPage.classList.remove("hidden");
           } else {
             showApp();
@@ -283,8 +283,8 @@
             try {
               const user = document.getElementById("loginUser").value.trim();
               const pass = document.getElementById("loginPass").value;
-              await Auth.login(user, pass);
-              if (Auth.currentUser.must_change) {
+              await window.Auth.login(user, pass);
+              if (window.Auth.currentUser.must_change) {
                 loginPage.classList.add("hidden");
                 passwordPage.classList.remove("hidden");
               } else {
@@ -300,7 +300,7 @@
           .addEventListener("submit", async (e) => {
             e.preventDefault();
             const newPass = document.getElementById("newPass").value;
-            await Auth.changePassword(newPass);
+            await window.Auth.changePassword(newPass);
             showApp();
           });
 
@@ -315,7 +315,7 @@
           });
 
         logoutBtn.addEventListener("click", () => {
-          Auth.logout();
+          window.Auth.logout();
           location.reload();
         });
 
@@ -328,7 +328,7 @@
               const l = document.getElementById("userLogin").value.trim();
               const p = document.getElementById("userPassword").value;
               const r = document.getElementById("userRole").value;
-              await Auth.api.createUser(l, p, r);
+              await window.Auth.api.createUser(l, p, r);
               document.getElementById("userForm").classList.add("hidden");
               alert("Utilisateur ajouté");
             } catch (err) {
