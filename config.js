@@ -1,7 +1,7 @@
 // Configuration Supabase RÉELLE
 const SUPABASE_CONFIG = {
   url: 'https://qsbdzyhxppdbtsikhozp.supabase.co',
-  anon_key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFzYmR6eWh4cHBkYnRzaWtob3pwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzU5OTgwOTAsImV4cCI6MjA1MTU3NDA5MH0.Vl7mXwrJxMqQBrVRMtfJixaXGD6qJtfFVZyTRm3ePfw'
+  anon_key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFzYmR6eWh4cHBkYnRzaWtob3pwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE0NzI5OTYsImV4cCI6MjA2NzA0ODk5Nn0.kanu7GfIr-qDtd3wcSmDbjEMK9VYX4o9HdG4cD0rcus'
 };
 
 // Configuration de l'application
