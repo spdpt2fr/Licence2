@@ -240,15 +240,27 @@
     </div>
 
     <script>
-      document.addEventListener("DOMContentLoaded", async () => {
+      // Attendre que tous les scripts soient chargés
+      window.addEventListener('load', async () => {
+        console.log('🔄 Initialisation de l\'application...');
+        
         try {
-          if (window.Auth && typeof window.Auth.init === 'function') {
+          // Vérifier que Auth est disponible
+          if (!window.Auth) {
+            throw new Error('Module Auth non disponible');
+          }
+
+          // Initialiser Auth
+          if (typeof window.Auth.init === 'function') {
             await window.Auth.init();
+            console.log('✅ Auth initialisé avec succès');
           } else {
-            throw new Error('Module Auth non chargé');
+            throw new Error('Auth.init n\'est pas une fonction');
           }
         } catch (err) {
-          console.error('Erreur init Auth', err);
+          console.error('❌ Erreur init Auth:', err);
+          alert('Erreur d\'initialisation: ' + err.message);
+          return;
         }
 
         const loginPage = document.getElementById("loginPage");
@@ -269,8 +281,9 @@
           document.getElementById("userForm").classList.add("hidden");
         };
 
-        if (Auth.currentUser) {
-          if (Auth.currentUser.must_change) {
+        // Vérifier l'état de connexion
+        if (window.Auth.currentUser) {
+          if (window.Auth.currentUser.must_change) {
             passwordPage.classList.remove("hidden");
           } else {
             showApp();
@@ -281,6 +294,7 @@
           logoutBtn.classList.add("hidden");
         }
 
+        // Gestionnaire de connexion
         document
           .getElementById("loginForm")
           .addEventListener("submit", async (e) => {
@@ -288,27 +302,42 @@
             try {
               const user = document.getElementById("loginUser").value.trim();
               const pass = document.getElementById("loginPass").value;
-              await Auth.login(user, pass);
-              if (Auth.currentUser.must_change) {
+              
+              // Vérifier que Auth.login existe
+              if (typeof window.Auth.login !== 'function') {
+                throw new Error('Auth.login n\'est pas disponible');
+              }
+              
+              await window.Auth.login(user, pass);
+              
+              if (window.Auth.currentUser.must_change) {
                 loginPage.classList.add("hidden");
                 passwordPage.classList.remove("hidden");
               } else {
                 showApp();
               }
             } catch (err) {
-              alert(err.message);
+              console.error('Erreur de connexion:', err);
+              alert(err.message || 'Erreur de connexion');
             }
           });
 
+        // Gestionnaire de changement de mot de passe
         document
           .getElementById("passwordForm")
           .addEventListener("submit", async (e) => {
             e.preventDefault();
-            const newPass = document.getElementById("newPass").value;
-            await Auth.changePassword(newPass);
-            showApp();
+            try {
+              const newPass = document.getElementById("newPass").value;
+              await window.Auth.changePassword(newPass);
+              showApp();
+            } catch (err) {
+              console.error('Erreur changement mot de passe:', err);
+              alert('Erreur: ' + err.message);
+            }
           });
 
+        // Autres gestionnaires d'événements...
         document.getElementById("newUser").addEventListener("click", () => {
           document.getElementById("userForm").classList.remove("hidden");
         });
@@ -320,7 +349,7 @@
           });
 
         logoutBtn.addEventListener("click", () => {
-          Auth.logout();
+          window.Auth.logout();
           location.reload();
         });
 
@@ -333,7 +362,7 @@
               const l = document.getElementById("userLogin").value.trim();
               const p = document.getElementById("userPassword").value;
               const r = document.getElementById("userRole").value;
-              await Auth.api.createUser(l, p, r);
+              await window.Auth.api.createUser(l, p, r);
               document.getElementById("userForm").classList.add("hidden");
               alert("Utilisateur ajouté");
             } catch (err) {
