@@ -1,168 +1,211 @@
-# 📋 Licence2 - Gestionnaire de Licences Logicielles
+# 🚀 Licence2 - Frontend Pur
 
-Application web moderne pour gérer les licences logicielles de votre entreprise avec alertes automatiques d'expiration.
+**Gestionnaire de licences logicielles simplifié** - Version frontend pur avec Supabase
 
-## 🚀 Fonctionnalités
+## ✨ **Nouveautés Version 2.0**
 
-- ✅ **Gestion complète des licences** (CRUD)
-- 🔔 **Alertes d'expiration** automatiques
-- 🔍 **Recherche et filtrage** des licences
-- 📊 **Tableau de bord** avec statuts visuels
-- 🎨 **Interface responsive** et moderne
-- 🔐 **Base de données PostgreSQL** sécurisée
+### **🏗️ Architecture Simplifiée**
+- ❌ **Suppression du backend Express** (plus de server.js)
+- ✅ **Frontend pur** avec Supabase direct
+- ✅ **Déploiement simple** sur Netlify
+- ✅ **Mode hors ligne** automatique
 
-## 🛠️ Technologies utilisées
+### **🎯 Avantages**
+- **Zéro configuration serveur** 
+- **Déploiement instantané** sur Netlify
+- **Coûts réduits** (pas de serveur backend)
+- **Maintenance simplifiée** (un seul codebase)
+- **Mode offline** intégré
 
-- **Backend**: Node.js, Express.js
-- **Base de données**: PostgreSQL (Neon)
-- **Frontend**: HTML5, CSS3, JavaScript (Vanilla)
-- **Hébergement**: Compatible avec Heroku, Vercel, Railway, etc.
-
-## 📦 Installation
-
-### 1. Cloner le projet
-```bash
-git clone https://github.com/spdpt2fr/Licence2.git
-cd Licence2
-```
-
-### 2. Installer les dépendances
-```bash
-npm install
-```
-
-### 3. Configuration de l'environnement
-```bash
-# Copier le fichier d'exemple
-cp .env.example .env
-
-# Éditer le fichier .env avec vos propres valeurs
-nano .env
-```
-
-### 4. Configurer la base de données
-Modifiez le fichier `.env` avec votre propre chaîne de connexion PostgreSQL :
-```env
-DATABASE_URL=postgresql://username:password@host:port/database
-PORT=3000
-```
-
-### 5. Démarrer l'application
-```bash
-# Mode production
-npm start
-
-# Mode développement (avec nodemon)
-npm run dev
-```
-
-### 6. Accéder à l'application
-Ouvrez votre navigateur et allez sur : `http://localhost:3000`
-
-## 🔧 Structure du projet
+## 📁 **Structure du Projet**
 
 ```
 Licence2/
-├── server.js          # Serveur Express.js
-├── index.html         # Interface utilisateur
-├── script.js          # Logique frontend
-├── style.css          # Styles CSS
-├── package.json       # Configuration npm
-├── .env.example       # Exemple de configuration
-├── .gitignore         # Fichiers ignorés par Git
-└── README.md          # Documentation
+├── index.html          # Interface utilisateur
+├── config.js           # Configuration Supabase
+├── api.js              # Couche API pour CRUD
+├── app.js              # Logique applicative
+├── style.css           # Styles modernes
+├── README.md           # Cette documentation
+│
+├── index-old.html      # Ancienne interface
 ```
 
-## 📊 Schéma de la base de données
+## 🚀 **Installation & Configuration**
+
+### **1. Configuration Supabase**
+
+1. **Créer un projet** sur [supabase.com](https://supabase.com)
+2. **Récupérer les clés** dans Settings > API
+3. **Modifier `config.js`** :
+
+```javascript
+const SUPABASE_CONFIG = {
+  url: 'https://votre-projet.supabase.co',
+  anon_key: 'votre-cle-publique'
+};
+```
+
+### **2. Créer la table**
+
+Exécuter ce SQL dans l'éditeur Supabase :
 
 ```sql
+-- Créer la table licences
 CREATE TABLE licences (
   id TEXT PRIMARY KEY,
-  softwareName TEXT NOT NULL,
+  software_name TEXT NOT NULL,
   vendor TEXT NOT NULL,
   version TEXT NOT NULL,
-  type TEXT NOT NULL,
+  type TEXT NOT NULL CHECK (type IN ('perpetuelle', 'abonnement', 'utilisateur', 'concurrent')),
   seats INTEGER NOT NULL DEFAULT 1,
-  purchaseDate DATE NOT NULL,
-  expirationDate DATE NOT NULL,
-  initialCost REAL NOT NULL DEFAULT 0,
-  assignedTo TEXT,
-  createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  purchase_date DATE NOT NULL,
+  expiration_date DATE NOT NULL,
+  initial_cost REAL NOT NULL DEFAULT 0,
+  assigned_to TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Activer RLS (Row Level Security)
+ALTER TABLE licences ENABLE ROW LEVEL SECURITY;
+
+-- Politique d'accès public (à adapter selon vos besoins)
+CREATE POLICY "Public access" ON licences FOR ALL USING (true);
+
+-- Trigger pour updated_at
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = CURRENT_TIMESTAMP;
+  RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+CREATE TRIGGER update_licences_updated_at 
+  BEFORE UPDATE ON licences 
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 ```
 
-## 🔔 Système d'alertes
+### **3. Déploiement**
 
-L'application affiche automatiquement des alertes colorées selon les délais d'expiration :
+**Sur Netlify :**
+1. Connecter votre repo GitHub
+2. Définir le répertoire de build : `./`
+3. Fichier d'entrée : `index.html`
+4. Déployer ! 🎉
 
-- 🔴 **Rouge** : Expiré ou expire dans moins de 7 jours
-- 🟠 **Orange** : Expire dans 8-15 jours
-- 🟡 **Jaune** : Expire dans 16-30 jours
-- 🟢 **Vert** : Plus de 30 jours
+## 🎯 **Fonctionnalités**
 
-## 🚀 Déploiement
+### **✅ CRUD Complet**
+- **Créer** de nouvelles licences
+- **Lire** et rechercher
+- **Modifier** les données
+- **Supprimer** les licences
 
-### Heroku
-```bash
-# Ajouter Heroku remote
-heroku git:remote -a votre-app-name
+### **🚨 Système d'Alertes**
+- **Rouge** : Expiré ou < 7 jours
+- **Orange** : 8-15 jours
+- **Jaune** : 16-30 jours
+- **Vert** : > 30 jours
 
-# Déployer
-git push heroku main
+### **🔍 Recherche & Filtrage**
+- Recherche temps réel
+- Filtrage par nom/éditeur
+- Compteur de résultats
 
-# Configurer les variables d'environnement
-heroku config:set DATABASE_URL=votre_url_postgresql
+### **💾 Mode Hors Ligne**
+- Fonctionne sans Supabase
+- Données en mémoire locale
+- Sync automatique quand connecté
+
+## 🔧 **Développement**
+
+### **Structure du Code**
+
+**config.js** - Configuration centralisée
+```javascript
+const SUPABASE_CONFIG = { /* ... */ };
+const APP_CONFIG = { /* ... */ };
 ```
 
-### Railway
-```bash
-# Installer Railway CLI
-npm install -g @railway/cli
-
-# Déployer
-railway deploy
+**api.js** - Couche d'abstraction données
+```javascript
+class LicencesAPI {
+  async create(licence) { /* ... */ }
+  async getAll() { /* ... */ }
+  async update(id, licence) { /* ... */ }
+  async delete(id) { /* ... */ }
+}
 ```
 
-## 🔐 Sécurité
+**app.js** - Logique interface utilisateur
+```javascript
+class LicenceApp {
+  async init() { /* ... */ }
+  render() { /* ... */ }
+  showAlerts() { /* ... */ }
+}
+```
 
-- ✅ Variables d'environnement pour la configuration
-- ✅ Validation des données côté serveur
-- ✅ Gestion des erreurs robuste
-- ✅ Connexion SSL à la base de données
+### **Personnalisation**
 
-## 🤝 Contribution
+**Modifier les types de licences** dans `app.js` :
+```javascript
+// Dans openForm()
+<select id="type">
+  <option value="perpetuelle">Perpétuelle</option>
+  <option value="abonnement">Abonnement</option>
+  <option value="custom">Votre Type</option>
+</select>
+```
 
-Les contributions sont les bienvenues ! Pour contribuer :
+**Changer les seuils d'alerte** dans `app.js` :
+```javascript
+// Dans showAlerts()
+if (diff <= 14) level = 'danger';      // 14 jours au lieu de 7
+else if (diff <= 30) level = 'warn';   // etc.
+```
 
-1. Forkez le projet
-2. Créez une branche feature (`git checkout -b feature/nouvelle-fonctionnalite`)
-3. Commitez vos changements (`git commit -m 'Ajout nouvelle fonctionnalité'`)
-4. Poussez vers la branche (`git push origin feature/nouvelle-fonctionnalite`)
-5. Ouvrez une Pull Request
+## 🆚 **Comparaison Versions**
 
-## 📄 Licence
+| Fonctionnalité | **V1 (Backend)** | **V2 (Frontend)** |
+|----------------|------------------|-------------------|
+| **Serveur** | Node.js requis | ❌ Aucun |
+| **Base de données** | PostgreSQL + Express | Supabase direct |
+| **Déploiement** | Heroku/Railway | Netlify simple |
+| **Coût** | Serveur payant | Gratuit |
+| **Maintenance** | 2 applications | 1 application |
+| **Hors ligne** | ❌ Non | ✅ Oui |
+| **Complexité** | Élevée | Simple |
 
-Ce projet est sous licence ISC.
+## 📊 **Migration Depuis V1**
 
-## 🐛 Résolution des problèmes
+Pour migrer vos données PostgreSQL vers Supabase :
 
-### Erreurs communes
+1. **Exporter** vos données V1
+2. **Adapter** le schéma (noms de colonnes)
+3. **Importer** dans Supabase
+4. **Tester** la nouvelle version
 
-1. **Erreur de connexion à la base de données**
-   - Vérifiez votre `DATABASE_URL` dans `.env`
-   - Assurez-vous que votre base PostgreSQL est accessible
+## 🛠️ **Troubleshooting**
 
-2. **Port déjà utilisé**
-   - Changez le port dans `.env` : `PORT=3001`
+**Problème de configuration :**
+- Vérifier `SUPABASE_CONFIG` dans `config.js`
+- Contrôler les politiques RLS dans Supabase
 
-3. **Modules non trouvés**
-   - Réinstallez les dépendances : `npm install`
+**Mode hors ligne persistant :**
+- Vérifier la console (F12) pour les erreurs
+- Tester manuellement l'API Supabase
 
-## 📧 Support
+**Erreurs de CORS :**
+- Ajouter votre domaine dans Supabase Settings > API
 
-Pour toute question ou problème, ouvrez une issue sur GitHub.
+## 📞 **Support**
+
+- **GitHub Issues** : [Licence2 Issues](https://github.com/spdpt2fr/Licence2/issues)
+- **Documentation Supabase** : [docs.supabase.com](https://docs.supabase.com)
 
 ---
 
-**Développé avec ❤️ pour simplifier la gestion des licences logicielles**
+**🎉 Version 2.0 - Architecture Frontend Pur - Plus simple, plus rapide !**

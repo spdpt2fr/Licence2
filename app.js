@@ -106,11 +106,22 @@ class LicenceApp {
         <td>${licence.expirationDate}</td>
         <td>${licence.initialCost}€</td>
         <td>${licence.assignedTo || '-'}</td>
-        <td>
-          <button onclick="app.editLicence('${licence.id}')" class="btn-edit">Éditer</button>
-          <button onclick="app.deleteLicence('${licence.id}')" class="btn-delete">Supprimer</button>
-        </td>
+        <td class="actions"></td>
       `;
+
+      const actionsTd = tr.querySelector('.actions');
+      const editBtn = document.createElement('button');
+      editBtn.className = 'btn-edit';
+      editBtn.textContent = 'Éditer';
+      editBtn.addEventListener('click', () => this.editLicence(licence.id));
+
+      const deleteBtn = document.createElement('button');
+      deleteBtn.className = 'btn-delete';
+      deleteBtn.textContent = 'Supprimer';
+      deleteBtn.addEventListener('click', () => this.deleteLicence(licence.id));
+
+      actionsTd.appendChild(editBtn);
+      actionsTd.appendChild(deleteBtn);
       
       tbody.appendChild(tr);
     });
