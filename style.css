@@ -100,6 +100,30 @@ header h1 {
   background: #38a169;
 }
 
+/* Nouvelle section pour affichage utilisateur */
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.current-user {
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.current-user::before {
+  content: "👤";
+  font-size: 1rem;
+}
+
 /* Alertes */
 .alerts {
   margin-bottom: 20px;
@@ -410,6 +434,11 @@ tbody tr:hover {
     text-align: center;
   }
   
+  .user-info {
+    justify-content: center;
+    width: 100%;
+  }
+  
   .toolbar {
     flex-direction: column;
     gap: 15px;
@@ -445,7 +474,12 @@ tbody tr:hover {
 
 @media (max-width: 480px) {
   header h1 {
-    font-size: 2rem;
+    font-size: 1.5rem;
+  }
+  
+  .current-user {
+    font-size: 0.8rem;
+    padding: 6px 12px;
   }
   
   .btn {
