@@ -1,13 +1,39 @@
 {
-  "name": "licence2",
-  "version": "1.0.0",
-  "description": "**Gestionnaire de licences logicielles simplifié** - Version frontend pur avec Supabase",
-  "main": "api.js",
+  "name": "Licence2",
+  "version": "3.0.0",
+  "description": "Gestionnaire de licences logicielles - Architecture modulaire",
+  "type": "module",
   "scripts": {
-    "test": "node --test"
+    "dev": "live-server public/ --port=3000 --open=/",
+    "build": "node scripts/build.js",
+    "test": "node scripts/test.js",
+    "test:unit": "node scripts/test.js --unit",
+    "test:integration": "node scripts/test.js --integration",
+    "test:e2e": "node scripts/test.js --e2e",
+    "deploy": "node scripts/deploy.js",
+    "db:setup": "node scripts/db-setup.js",
+    "lint": "eslint src/ --ext .js",
+    "format": "prettier --write src/",
+    "serve": "http-server public/ -p 3000 -c-1"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs"
+  "devDependencies": {
+    "live-server": "^1.2.2",
+    "http-server": "^14.1.1",
+    "eslint": "^8.0.0",
+    "prettier": "^3.0.0"
+  },
+  "keywords": [
+    "license-management",
+    "supabase",
+    "frontend",
+    "javascript",
+    "modular-architecture"
+  ],
+  "author": "spdpt2fr",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/spdpt2fr/Licence2.git"
+  },
+  "homepage": "https://licenceskay.netlify.app"
 }
