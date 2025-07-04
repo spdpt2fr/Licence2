@@ -4,16 +4,16 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Gestionnaire de Licences - Version Frontend Pur</title>
-    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="style.css?v=20250704-1942" />
 
     <!-- Supabase CDN -->
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 
-    <!-- Configuration et modules -->
-    <script src="config.js"></script>
-    <script src="api.js"></script>
-    <script src="auth.js"></script>
-    <script src="app.js"></script>
+    <!-- Configuration et modules avec cache busting -->
+    <script src="config.js?v=20250704-1942"></script>
+    <script src="api.js?v=20250704-1942"></script>
+    <script src="auth.js?v=20250704-1942"></script>
+    <script src="app.js?v=20250704-1942"></script>
   </head>
   <body>
     <div id="loginPage" class="login-page hidden">
@@ -276,14 +276,26 @@
 
         // Fonction pour mettre à jour l'affichage des permissions
         function updateUIPermissions() {
-          if (window.Auth.currentUser) {
-            // Afficher le nom d'utilisateur et le rôle
-            const roleDisplayName = window.Auth.getRoleDisplayName();
+          if (window.Auth && window.Auth.currentUser) {
+            // Version avec fallback en cas de problème
+            let roleDisplayName = 'Utilisateur';
+            if (typeof window.Auth.getRoleDisplayName === 'function') {
+              roleDisplayName = window.Auth.getRoleDisplayName();
+            } else {
+              // Fallback manuel
+              const roleMap = {
+                'read': 'Lecture',
+                'write': 'Écriture', 
+                'admin': 'Admin'
+              };
+              roleDisplayName = roleMap[window.Auth.currentUser.role] || 'Utilisateur';
+            }
+            
             currentUserDisplay.textContent = `${window.Auth.currentUser.login} (${roleDisplayName})`;
             currentUserDisplay.classList.remove("hidden");
             
             // Afficher/masquer le bouton "Nouvel utilisateur" selon les permissions
-            if (window.Auth.hasPermission('create_user')) {
+            if (typeof window.Auth.hasPermission === 'function' && window.Auth.hasPermission('create_user')) {
               newUserBtn.classList.remove("hidden");
             } else {
               newUserBtn.classList.add("hidden");
@@ -364,7 +376,7 @@
 
         // Gestionnaire bouton "Nouvel utilisateur" avec vérification des permissions
         document.getElementById("newUser").addEventListener("click", () => {
-          if (window.Auth.hasPermission('create_user')) {
+          if (typeof window.Auth.hasPermission === 'function' && window.Auth.hasPermission('create_user')) {
             document.getElementById("userForm").classList.remove("hidden");
           } else {
             alert("Vous n'avez pas les permissions pour créer des utilisateurs.");
@@ -390,7 +402,7 @@
             e.preventDefault();
             
             // Vérifier les permissions avant de créer
-            if (!window.Auth.hasPermission('create_user')) {
+            if (typeof window.Auth.hasPermission !== 'function' || !window.Auth.hasPermission('create_user')) {
               alert("Vous n'avez pas les permissions pour créer des utilisateurs.");
               return;
             }
