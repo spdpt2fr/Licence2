@@ -17,19 +17,23 @@ class UsersAPI {
     }
   }
 
+  ensureLocalAdmin() {
+    const users = JSON.parse(localStorage.getItem("users") || "[]");
+    const admin = users.find((u) => u.login === "Admin");
+    if (!admin) {
+      users.push({
+        login: "Admin",
+        password: btoa("Admin"),
+        role: "write",
+        must_change: true,
+      });
+      localStorage.setItem("users", JSON.stringify(users));
+    }
+  }
+
   async ensureAdminUser() {
     if (this.useOfflineMode) {
-      const users = JSON.parse(localStorage.getItem("users") || "[]");
-      const admin = users.find((u) => u.login === "Admin");
-      if (!admin) {
-        users.push({
-          login: "Admin",
-          password: btoa("Admin"),
-          role: "write",
-          must_change: true,
-        });
-        localStorage.setItem("users", JSON.stringify(users));
-      }
+      this.ensureLocalAdmin();
       return;
     }
 
@@ -38,9 +42,17 @@ class UsersAPI {
       .select("*")
       .eq("login", "Admin")
       .single();
-    if (error && error.code !== "PGRST116") {
-      console.error("Error fetching admin user", error);
-      return;
+    if (error) {
+      if (error.code === "42P01") {
+        console.warn("Users table missing, switching to offline mode");
+        this.useOfflineMode = true;
+        this.ensureLocalAdmin();
+        return;
+      }
+      if (error.code !== "PGRST116") {
+        console.error("Error fetching admin user", error);
+        return;
+      }
     }
     if (!data) {
       await this.supabase.from(APP_CONFIG.usersTable).insert([
