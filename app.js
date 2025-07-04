@@ -497,10 +497,8 @@ class LicenceApp {
 // Initialisation globale
 let app;
 
-// Démarrage de l'application
-window.addEventListener('DOMContentLoaded', async () => {
+window.startLicenceApp = async () => {
   app = new LicenceApp();
   await app.init();
-  // Export global après initialisation
   window.app = app;
-});
+};
