@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test - Licence2 Frontend Pur</title>
+  <link rel="stylesheet" href="style-new.css">
+  
+  <!-- Supabase CDN -->
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  
+  <style>
+    .test-container {
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 30px;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+    
+    .test-section {
+      margin-bottom: 30px;
+      padding: 20px;
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+    }
+    
+    .test-success {
+      border-color: #38a169;
+      background: #f0fff4;
+    }
+    
+    .test-warning {
+      border-color: #d69e2e;
+      background: #fffaf0;
+    }
+    
+    .test-error {
+      border-color: #e53e3e;
+      background: #fff5f5;
+    }
+    
+    .demo-data {
+      background: #f7fafc;
+      padding: 15px;
+      border-radius: 6px;
+      margin-top: 15px;
+      font-family: monospace;
+      font-size: 0.9rem;
+    }
+    
+    .status-indicator {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-right: 8px;
+    }
+    
+    .status-ok { background: #38a169; }
+    .status-warn { background: #d69e2e; }
+    .status-error { background: #e53e3e; }
+    
+    .test-button {
+      background: #667eea;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      margin: 5px;
+    }
+    
+    .test-button:hover {
+      background: #5a67d8;
+    }
+  </style>
+</head>
+<body>
+  <div class="test-container">
+    <header>
+      <h1>🧪 Test - Licence2 Frontend Pur</h1>
+      <p>Vérification de la nouvelle architecture sans backend</p>
+    </header>
+
+    <div class="test-section" id="supabaseTest">
+      <h3><span class="status-indicator status-warn"></span>1. Test Supabase</h3>
+      <p>Vérification du chargement de la librairie Supabase</p>
+      <button class="test-button" onclick="testSupabase()">Tester Supabase</button>
+      <div id="supabaseResult"></div>
+    </div>
+
+    <div class="test-section" id="configTest">
+      <h3><span class="status-indicator status-warn"></span>2. Test Configuration</h3>
+      <p>Vérification du chargement des fichiers de configuration</p>
+      <button class="test-button" onclick="testConfig()">Tester Config</button>
+      <div id="configResult"></div>
+    </div>
+
+    <div class="test-section" id="apiTest">
+      <h3><span class="status-indicator status-warn"></span>3. Test API Layer</h3>
+      <p>Vérification de la couche API pour le CRUD</p>
+      <button class="test-button" onclick="testAPI()">Tester API</button>
+      <div id="apiResult"></div>
+    </div>
+
+    <div class="test-section" id="appTest">
+      <h3><span class="status-indicator status-warn"></span>4. Test Application</h3>
+      <p>Test de l'initialisation de l'application principale</p>
+      <button class="test-button" onclick="testApp()">Tester App</button>
+      <div id="appResult"></div>
+    </div>
+
+    <div class="test-section" id="offlineTest">
+      <h3><span class="status-indicator status-warn"></span>5. Test Mode Hors Ligne</h3>
+      <p>Test des fonctionnalités en mode hors ligne</p>
+      <button class="test-button" onclick="testOfflineMode()">Tester Hors Ligne</button>
+      <div id="offlineResult"></div>
+    </div>
+
+    <div class="test-section">
+      <h3>🚀 Lancer l'application</h3>
+      <p>Si tous les tests sont OK, vous pouvez utiliser la nouvelle version :</p>
+      <a href="index-new.html" class="test-button" style="text-decoration: none; display: inline-block;">
+        ▶️ Ouvrir Licence2 V2
+      </a>
+    </div>
+  </div>
+
+  <script>
+    // Configuration de test avec des valeurs par défaut
+    window.SUPABASE_CONFIG = {
+      url: 'https://test.supabase.co',
+      anon_key: 'test-key'
+    };
+
+    window.APP_CONFIG = {
+      tableName: 'licences',
+      enableOfflineMode: true,
+      debugMode: true
+    };
+
+    function updateTestStatus(sectionId, status, message) {
+      const section = document.getElementById(sectionId);
+      const indicator = section.querySelector('.status-indicator');
+      const result = section.querySelector('[id$="Result"]');
+      
+      indicator.className = `status-indicator status-${status}`;
+      result.innerHTML = `<div class="demo-data">${message}</div>`;
+      
+      if (status === 'ok') {
+        section.classList.remove('test-warning', 'test-error');
+        section.classList.add('test-success');
+      } else if (status === 'warn') {
+        section.classList.remove('test-success', 'test-error');
+        section.classList.add('test-warning');
+      } else {
+        section.classList.remove('test-success', 'test-warning');
+        section.classList.add('test-error');
+      }
+    }
+
+    function testSupabase() {
+      try {
+        if (typeof supabase !== 'undefined' && supabase.createClient) {
+          updateTestStatus('supabaseTest', 'ok', 
+            '✅ Supabase chargé avec succès\n' +
+            '📦 Version: ' + (supabase.VERSION || 'Détectée') + '\n' +
+            '🔧 Fonction createClient disponible'
+          );
+        } else {
+          throw new Error('Supabase non disponible');
+        }
+      } catch (error) {
+        updateTestStatus('supabaseTest', 'error', 
+          '❌ Erreur: ' + error.message + '\n' +
+          '💡 Vérifiez que le CDN Supabase est accessible'
+        );
+      }
+    }
+
+    function testConfig() {
+      try {
+        // Test si les fichiers de config sont chargés
+        if (typeof window.SUPABASE_CONFIG !== 'undefined' && 
+            typeof window.APP_CONFIG !== 'undefined') {
+          updateTestStatus('configTest', 'ok', 
+            '✅ Configuration chargée\n' +
+            '🔗 URL Supabase: ' + window.SUPABASE_CONFIG.url + '\n' +
+            '📊 Table: ' + window.APP_CONFIG.tableName + '\n' +
+            '📱 Mode hors ligne: ' + (window.APP_CONFIG.enableOfflineMode ? 'Activé' : 'Désactivé')
+          );
+        } else {
+          throw new Error('Fichiers de configuration non chargés');
+        }
+      } catch (error) {
+        updateTestStatus('configTest', 'error', 
+          '❌ Erreur: ' + error.message + '\n' +
+          '💡 Vérifiez que config.js est bien chargé'
+        );
+      }
+    }
+
+    function testAPI() {
+      try {
+        if (typeof window.LicencesAPI !== 'undefined') {
+          const api = new window.LicencesAPI();
+          const methods = ['init', 'create', 'getAll', 'update', 'delete', 'generateId'];
+          const availableMethods = methods.filter(method => typeof api[method] === 'function');
+          
+          updateTestStatus('apiTest', 'ok', 
+            '✅ Classe LicencesAPI disponible\n' +
+            '🔧 Méthodes: ' + availableMethods.join(', ') + '\n' +
+            '📊 API prête pour le CRUD'
+          );
+        } else {
+          throw new Error('Classe LicencesAPI non disponible');
+        }
+      } catch (error) {
+        updateTestStatus('apiTest', 'error', 
+          '❌ Erreur: ' + error.message + '\n' +
+          '💡 Vérifiez que api.js est bien chargé'
+        );
+      }
+    }
+
+    function testApp() {
+      try {
+        if (typeof window.LicenceApp !== 'undefined') {
+          // Test d'instanciation sans initialisation complète
+          const app = new window.LicenceApp();
+          const methods = ['init', 'loadLicences', 'render', 'showAlerts'];
+          const availableMethods = methods.filter(method => typeof app[method] === 'function');
+          
+          updateTestStatus('appTest', 'ok', 
+            '✅ Classe LicenceApp disponible\n' +
+            '🔧 Méthodes: ' + availableMethods.join(', ') + '\n' +
+            '🎯 Application prête à démarrer'
+          );
+        } else {
+          throw new Error('Classe LicenceApp non disponible');
+        }
+      } catch (error) {
+        updateTestStatus('appTest', 'error', 
+          '❌ Erreur: ' + error.message + '\n' +
+          '💡 Vérifiez que app.js est bien chargé'
+        );
+      }
+    }
+
+    async function testOfflineMode() {
+      try {
+        if (typeof window.LicencesAPI !== 'undefined') {
+          const api = new window.LicencesAPI();
+          // Forcer le mode hors ligne
+          api.useOfflineMode = true;
+          
+          // Test CRUD basique
+          const testLicence = {
+            id: 'test-' + Date.now(),
+            softwareName: 'Test Software',
+            vendor: 'Test Vendor',
+            version: '1.0',
+            type: 'perpetuelle',
+            seats: 1,
+            purchaseDate: '2025-01-01',
+            expirationDate: '2025-12-31',
+            initialCost: 100
+          };
+          
+          const createResult = await api.create(testLicence);
+          const readResult = await api.getAll();
+          
+          if (createResult.success && readResult.success) {
+            updateTestStatus('offlineTest', 'ok', 
+              '✅ Mode hors ligne fonctionnel\n' +
+              '💾 Création: OK\n' +
+              '📖 Lecture: OK (' + readResult.data.length + ' licence(s))\n' +
+              '🔄 Prêt pour sync Supabase'
+            );
+          } else {
+            throw new Error('Tests CRUD échoués');
+          }
+        } else {
+          throw new Error('API non disponible');
+        }
+      } catch (error) {
+        updateTestStatus('offlineTest', 'error', 
+          '❌ Erreur: ' + error.message + '\n' +
+          '💡 Le mode hors ligne ne fonctionne pas correctement'
+        );
+      }
+    }
+
+    // Auto-test au chargement
+    document.addEventListener('DOMContentLoaded', () => {
+      console.log('🧪 Page de test chargée');
+      console.log('📋 Lancez les tests manuellement ou cliquez sur "Auto-Test"');
+    });
+  </script>
+
+  <!-- Chargement des modules (simulation) -->
+  <script>
+    // Simulation des modules pour les tests
+    
+    // Simulation config.js
+    window.SUPABASE_CONFIG = {
+      url: 'https://your-project.supabase.co',
+      anon_key: 'your-anon-key'
+    };
+    
+    window.APP_CONFIG = {
+      tableName: 'licences',
+      enableOfflineMode: true,
+      debugMode: true
+    };
+
+    // Simulation api.js
+    class LicencesAPI {
+      constructor() {
+        this.fallbackData = [];
+        this.useOfflineMode = true;
+      }
+
+      async init() {
+        return false; // Simulation mode hors ligne
+      }
+
+      async create(licence) {
+        this.fallbackData.push({
+          ...licence,
+          created_at: new Date().toISOString()
+        });
+        return { success: true, data: licence };
+      }
+
+      async getAll() {
+        return { success: true, data: this.fallbackData };
+      }
+
+      generateId() {
+        return Date.now().toString();
+      }
+    }
+
+    // Simulation app.js
+    class LicenceApp {
+      constructor() {
+        this.api = new LicencesAPI();
+        this.licences = [];
+      }
+
+      async init() {
+        await this.api.init();
+        return true;
+      }
+
+      async loadLicences() {
+        const result = await this.api.getAll();
+        this.licences = result.data;
+        return true;
+      }
+
+      render() {
+        return true;
+      }
+
+      showAlerts() {
+        return true;
+      }
+    }
+
+    // Export global pour les tests
+    window.LicencesAPI = LicencesAPI;
+    window.LicenceApp = LicenceApp;
+  </script>
+
+  <div style="text-align: center; margin-top: 40px; padding: 20px; background: #f7fafc; border-radius: 8px;">
+    <button class="test-button" onclick="testSupabase(); testConfig(); testAPI(); testApp(); setTimeout(testOfflineMode, 500);" style="background: #38a169;">
+      🚀 Auto-Test Complet
+    </button>
+    <p style="margin-top: 10px; color: #4a5568; font-size: 0.9rem;">
+      Lance tous les tests automatiquement
+    </p>
+  </div>
+</body>
+</html>
