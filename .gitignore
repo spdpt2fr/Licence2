@@ -61,7 +61,8 @@ dist
 
 # Gatsby files
 .cache/
-public
+# public assets are tracked
+#public
 
 # Storybook build outputs
 .out
