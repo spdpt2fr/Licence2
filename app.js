@@ -280,8 +280,7 @@ class LicenceApp {
         // Modification
         result = await this.api.update(id, licenceData);
       } else {
-        // Création
-        licenceData.id = this.api.generateId();
+        // Création - L'ID sera auto-généré par Supabase
         result = await this.api.create(licenceData);
       }
       
