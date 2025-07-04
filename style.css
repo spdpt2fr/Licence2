@@ -50,6 +50,12 @@ body {
   gap: 15px;
   min-width: 280px;
 }
+.login-hint {
+  margin-top: -5px;
+  font-size: 0.8rem;
+  color: #666;
+  text-align: center;
+}
 
 /* Header */
 header {

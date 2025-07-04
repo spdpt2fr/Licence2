@@ -95,6 +95,10 @@ CREATE TRIGGER update_licences_updated_at
 3. Fichier d'entrée : `index.html`
 4. Déployer ! 🎉
 
+### **4. Connexion initiale**
+
+Après le premier lancement, utilisez l'identifiant **Admin** avec le mot de passe **Admin** pour vous connecter. Vous pourrez changer ce mot de passe à la première connexion.
+
 ## 🎯 **Fonctionnalités**
 
 ### **✅ CRUD Complet**
