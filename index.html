@@ -261,15 +261,6 @@
           } else {
             throw new Error('Auth.init n\'est pas une fonction');
           }
-
-          // Debug - vérifier l'objet Auth après initialisation
-          console.log('🔍 Debug Auth après init:', {
-            hasPermission: typeof window.Auth.hasPermission,
-            getRoleDisplayName: typeof window.Auth.getRoleDisplayName,
-            currentUser: window.Auth.currentUser,
-            methods: Object.getOwnPropertyNames(window.Auth).filter(prop => typeof window.Auth[prop] === 'function')
-          });
-
         } catch (err) {
           console.error('❌ Erreur init Auth:', err);
           alert('Erreur d\'initialisation: ' + err.message);
@@ -285,48 +276,18 @@
 
         // Fonction pour mettre à jour l'affichage des permissions
         function updateUIPermissions() {
-          console.log('🔧 updateUIPermissions appelée');
-          
-          if (!window.Auth || !window.Auth.currentUser) {
-            console.log('❌ Pas d\'utilisateur connecté');
-            return;
-          }
-
-          // Vérification robuste des méthodes
-          if (typeof window.Auth.hasPermission !== 'function') {
-            console.error('❌ window.Auth.hasPermission n\'est pas une fonction');
-            console.log('window.Auth disponible:', Object.getOwnPropertyNames(window.Auth));
-            return;
-          }
-
-          if (typeof window.Auth.getRoleDisplayName !== 'function') {
-            console.error('❌ window.Auth.getRoleDisplayName n\'est pas une fonction');
-            // Fallback pour le nom du rôle
-            const roleMap = {
-              'read': 'Lecture',
-              'write': 'Écriture', 
-              'admin': 'Admin'
-            };
-            const roleDisplayName = roleMap[window.Auth.currentUser.role] || 'Utilisateur';
-            currentUserDisplay.textContent = `${window.Auth.currentUser.login} (${roleDisplayName})`;
-          } else {
-            // Utiliser la méthode si elle existe
+          if (window.Auth.currentUser) {
+            // Afficher le nom d'utilisateur et le rôle
             const roleDisplayName = window.Auth.getRoleDisplayName();
             currentUserDisplay.textContent = `${window.Auth.currentUser.login} (${roleDisplayName})`;
-          }
-          
-          currentUserDisplay.classList.remove("hidden");
-          
-          // Afficher/masquer le bouton "Nouvel utilisateur" selon les permissions
-          try {
+            currentUserDisplay.classList.remove("hidden");
+            
+            // Afficher/masquer le bouton "Nouvel utilisateur" selon les permissions
             if (window.Auth.hasPermission('create_user')) {
               newUserBtn.classList.remove("hidden");
             } else {
               newUserBtn.classList.add("hidden");
             }
-          } catch (err) {
-            console.error('❌ Erreur vérification permission create_user:', err);
-            newUserBtn.classList.add("hidden"); // Par sécurité, masquer le bouton
           }
         }
 
@@ -403,7 +364,7 @@
 
         // Gestionnaire bouton "Nouvel utilisateur" avec vérification des permissions
         document.getElementById("newUser").addEventListener("click", () => {
-          if (typeof window.Auth.hasPermission === 'function' && window.Auth.hasPermission('create_user')) {
+          if (window.Auth.hasPermission('create_user')) {
             document.getElementById("userForm").classList.remove("hidden");
           } else {
             alert("Vous n'avez pas les permissions pour créer des utilisateurs.");
@@ -429,7 +390,7 @@
             e.preventDefault();
             
             // Vérifier les permissions avant de créer
-            if (typeof window.Auth.hasPermission !== 'function' || !window.Auth.hasPermission('create_user')) {
+            if (!window.Auth.hasPermission('create_user')) {
               alert("Vous n'avez pas les permissions pour créer des utilisateurs.");
               return;
             }
