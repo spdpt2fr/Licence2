@@ -1,272 +1,341 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="fr">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gestionnaire de Licences - Version Frontend Pur</title>
-  <link rel="stylesheet" href="style.css">
-  
-  <!-- Supabase CDN -->
-  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-  
-  <!-- Configuration et modules -->
-  <script src="config.js"></script>
-  <script src="api.js"></script>
-  <script src="auth.js"></script>
-  <script src="app.js"></script>
-</head>
-<body>
-  <div id="loginPage" class="login-page hidden">
-    <form id="loginForm" class="login-form">
-      <h2>Connexion</h2>
-      <input id="loginUser" type="text" placeholder="Login" required>
-      <input id="loginPass" type="password" placeholder="Mot de passe" required>
-      <button type="submit" class="btn btn-primary">Se connecter</button>
-    </form>
-  </div>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gestionnaire de Licences - Version Frontend Pur</title>
+    <link rel="stylesheet" href="style.css" />
 
-  <div id="passwordPage" class="login-page hidden">
-    <form id="passwordForm" class="login-form">
-      <h2>Nouveau mot de passe</h2>
-      <input id="newPass" type="password" placeholder="Mot de passe" required>
-      <button type="submit" class="btn btn-primary">Enregistrer</button>
-    </form>
-  </div>
+    <!-- Supabase CDN -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 
-  <div class="container">
-    <!-- Header avec statut de connexion -->
-    <header>
-      <h1>🖥️ Gestionnaire de Licences</h1>
-      <div id="appStatus" class="status-bar">
-        <span class="status-indicator offline"></span>
-        Initialisation...
-      </div>
-    </header>
-
-    <!-- Alertes d'expiration -->
-    <section id="alerts" class="alerts"></section>
-
-    <!-- Barre d'outils -->
-    <div class="toolbar">
-      <button id="newLicence" class="btn btn-primary">
-        ➕ Ajouter une licence
-      </button>
-      <button id="newUser" class="btn btn-secondary">
-        👤 Nouvel utilisateur
-      </button>
-      <div class="search-container">
-        <input type="text" id="search" placeholder="🔍 Rechercher par nom ou éditeur...">
-        <span id="licencesCount" class="count">0 licence(s)</span>
-      </div>
-      <button id="exportCsv" class="btn btn-secondary">📤 Export CSV</button>
-      <button id="importCsv" class="btn btn-secondary">📥 Import CSV</button>
-      <input type="file" id="importFile" accept=".csv" class="hidden">
+    <!-- Configuration et modules -->
+    <script src="config.js"></script>
+    <script src="api.js"></script>
+    <script src="auth.js"></script>
+    <script src="app.js"></script>
+  </head>
+  <body>
+    <div id="loginPage" class="login-page hidden">
+      <form id="loginForm" class="login-form">
+        <h2>Connexion</h2>
+        <input id="loginUser" type="text" placeholder="Login" required />
+        <input
+          id="loginPass"
+          type="password"
+          placeholder="Mot de passe"
+          required
+        />
+        <button type="submit" class="btn btn-primary">Se connecter</button>
+      </form>
     </div>
 
-    <!-- Tableau des licences -->
-    <div class="table-container">
-      <table id="licenceTable">
-        <thead>
-          <tr>
-            <th>Logiciel</th>
-            <th>Éditeur</th>
-            <th>Version</th>
-            <th>Type</th>
-            <th>Sièges</th>
-            <th>Expiration</th>
-            <th>Coût</th>
-            <th>Assigné à</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <!-- Les données seront chargées dynamiquement -->
-        </tbody>
-      </table>
+    <div id="passwordPage" class="login-page hidden">
+      <form id="passwordForm" class="login-form">
+        <h2>Nouveau mot de passe</h2>
+        <input
+          id="newPass"
+          type="password"
+          placeholder="Mot de passe"
+          required
+        />
+        <button type="submit" class="btn btn-primary">Enregistrer</button>
+      </form>
     </div>
 
-    <!-- Formulaire modal -->
-    <div id="licenceForm" class="modal hidden">
-      <div class="modal-content">
-        <form>
-          <h2 id="formTitle">Nouvelle licence</h2>
-          
-          <input type="hidden" id="licenceId">
-          
-          <div class="form-grid">
-            <div class="form-group">
-              <label for="softwareName">Nom du logiciel *</label>
-              <input type="text" id="softwareName" required 
-                     placeholder="Ex: Microsoft Office">
+    <div class="container">
+      <!-- Header avec statut de connexion -->
+      <header>
+        <h1>🖥️ Gestionnaire de Licences</h1>
+        <div id="appStatus" class="status-bar">
+          <span class="status-indicator offline"></span>
+          Initialisation...
+        </div>
+        <button id="logoutBtn" class="btn btn-secondary hidden">
+          Se déconnecter
+        </button>
+      </header>
+
+      <!-- Alertes d'expiration -->
+      <section id="alerts" class="alerts"></section>
+
+      <!-- Barre d'outils -->
+      <div class="toolbar">
+        <button id="newLicence" class="btn btn-primary">
+          ➕ Ajouter une licence
+        </button>
+        <button id="newUser" class="btn btn-secondary">
+          👤 Nouvel utilisateur
+        </button>
+        <div class="search-container">
+          <input
+            type="text"
+            id="search"
+            placeholder="🔍 Rechercher par nom ou éditeur..."
+          />
+          <span id="licencesCount" class="count">0 licence(s)</span>
+        </div>
+        <button id="exportCsv" class="btn btn-secondary">📤 Export CSV</button>
+        <button id="importCsv" class="btn btn-secondary">📥 Import CSV</button>
+        <input type="file" id="importFile" accept=".csv" class="hidden" />
+      </div>
+
+      <!-- Tableau des licences -->
+      <div class="table-container">
+        <table id="licenceTable">
+          <thead>
+            <tr>
+              <th>Logiciel</th>
+              <th>Éditeur</th>
+              <th>Version</th>
+              <th>Type</th>
+              <th>Sièges</th>
+              <th>Expiration</th>
+              <th>Coût</th>
+              <th>Assigné à</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Les données seront chargées dynamiquement -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Formulaire modal -->
+      <div id="licenceForm" class="modal hidden">
+        <div class="modal-content">
+          <form>
+            <h2 id="formTitle">Nouvelle licence</h2>
+
+            <input type="hidden" id="licenceId" />
+
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="softwareName">Nom du logiciel *</label>
+                <input
+                  type="text"
+                  id="softwareName"
+                  required
+                  placeholder="Ex: Microsoft Office"
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="vendor">Éditeur *</label>
+                <input
+                  type="text"
+                  id="vendor"
+                  required
+                  placeholder="Ex: Microsoft"
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="version">Version *</label>
+                <input
+                  type="text"
+                  id="version"
+                  required
+                  placeholder="Ex: 2024"
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="type">Type de licence</label>
+                <select id="type">
+                  <option value="perpetuelle">Perpétuelle</option>
+                  <option value="abonnement">Abonnement</option>
+                  <option value="utilisateur">Par utilisateur</option>
+                  <option value="concurrent">Concurrent</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="seats">Nombre de sièges</label>
+                <input type="number" id="seats" min="1" value="1" required />
+              </div>
+
+              <div class="form-group">
+                <label for="purchaseDate">Date d'achat</label>
+                <input type="date" id="purchaseDate" required />
+              </div>
+
+              <div class="form-group">
+                <label for="expirationDate">Date d'expiration</label>
+                <input type="date" id="expirationDate" required />
+              </div>
+
+              <div class="form-group">
+                <label for="initialCost">Coût initial (€)</label>
+                <input
+                  type="number"
+                  id="initialCost"
+                  min="0"
+                  step="0.01"
+                  required
+                  placeholder="0.00"
+                />
+              </div>
+
+              <div class="form-group full-width">
+                <label for="assignedTo">Assigné à (employé/département)</label>
+                <input
+                  type="text"
+                  id="assignedTo"
+                  placeholder="Ex: Service Marketing"
+                />
+              </div>
             </div>
-            
-            <div class="form-group">
-              <label for="vendor">Éditeur *</label>
-              <input type="text" id="vendor" required 
-                     placeholder="Ex: Microsoft">
+
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary">
+                💾 Enregistrer
+              </button>
+              <button type="button" id="cancelForm" class="btn btn-secondary">
+                ❌ Annuler
+              </button>
             </div>
-            
+          </form>
+        </div>
+      </div>
+
+      <!-- Modal ajout utilisateur -->
+      <div id="userForm" class="modal hidden">
+        <div class="modal-content">
+          <form>
+            <h2>Nouvel utilisateur</h2>
             <div class="form-group">
-              <label for="version">Version *</label>
-              <input type="text" id="version" required 
-                     placeholder="Ex: 2024">
+              <label for="userLogin">Login</label>
+              <input id="userLogin" type="text" required />
             </div>
-            
             <div class="form-group">
-              <label for="type">Type de licence</label>
-              <select id="type">
-                <option value="perpetuelle">Perpétuelle</option>
-                <option value="abonnement">Abonnement</option>
-                <option value="utilisateur">Par utilisateur</option>
-                <option value="concurrent">Concurrent</option>
+              <label for="userPassword">Mot de passe</label>
+              <input id="userPassword" type="password" required />
+            </div>
+            <div class="form-group">
+              <label for="userRole">Rôle</label>
+              <select id="userRole">
+                <option value="read">Lecture</option>
+                <option value="write">Écriture</option>
               </select>
             </div>
-            
-            <div class="form-group">
-              <label for="seats">Nombre de sièges</label>
-              <input type="number" id="seats" min="1" value="1" required>
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary">Ajouter</button>
+              <button
+                type="button"
+                id="cancelUserForm"
+                class="btn btn-secondary"
+              >
+                Annuler
+              </button>
             </div>
-            
-            <div class="form-group">
-              <label for="purchaseDate">Date d'achat</label>
-              <input type="date" id="purchaseDate" required>
-            </div>
-            
-            <div class="form-group">
-              <label for="expirationDate">Date d'expiration</label>
-              <input type="date" id="expirationDate" required>
-            </div>
-            
-            <div class="form-group">
-              <label for="initialCost">Coût initial (€)</label>
-              <input type="number" id="initialCost" min="0" step="0.01" required
-                     placeholder="0.00">
-            </div>
-            
-            <div class="form-group full-width">
-              <label for="assignedTo">Assigné à (employé/département)</label>
-              <input type="text" id="assignedTo" 
-                     placeholder="Ex: Service Marketing">
-            </div>
-          </div>
-          
-          <div class="form-actions">
-            <button type="submit" class="btn btn-primary">💾 Enregistrer</button>
-            <button type="button" id="cancelForm" class="btn btn-secondary">❌ Annuler</button>
-          </div>
-        </form>
+          </form>
+        </div>
       </div>
+
+      <!-- Overlay pour le modal -->
+      <div class="modal-overlay hidden" onclick="closeModals()"></div>
     </div>
 
-    <!-- Modal ajout utilisateur -->
-    <div id="userForm" class="modal hidden">
-      <div class="modal-content">
-        <form>
-          <h2>Nouvel utilisateur</h2>
-          <div class="form-group">
-            <label for="userLogin">Login</label>
-            <input id="userLogin" type="text" required>
-          </div>
-          <div class="form-group">
-            <label for="userPassword">Mot de passe</label>
-            <input id="userPassword" type="password" required>
-          </div>
-          <div class="form-group">
-            <label for="userRole">Rôle</label>
-            <select id="userRole">
-              <option value="read">Lecture</option>
-              <option value="write">Écriture</option>
-            </select>
-          </div>
-          <div class="form-actions">
-            <button type="submit" class="btn btn-primary">Ajouter</button>
-            <button type="button" id="cancelUserForm" class="btn btn-secondary">Annuler</button>
-          </div>
-        </form>
-      </div>
-    </div>
-
-    <!-- Overlay pour le modal -->
-    <div class="modal-overlay hidden" onclick="closeModals()"></div>
-  </div>
-
-  <script>
-    document.addEventListener('DOMContentLoaded', async () => {
-      await Auth.init();
-
-      const loginPage = document.getElementById('loginPage');
-      const passwordPage = document.getElementById('passwordPage');
-      const container = document.querySelector('.container');
-
-      async function showApp() {
-        loginPage.classList.add('hidden');
-        passwordPage.classList.add('hidden');
-        container.style.display = 'block';
-        await startLicenceApp();
-      }
-
-      window.closeModals = function() {
-        if (window.app) app.closeForm();
-        document.getElementById('userForm').classList.add('hidden');
-      };
-
-      if (Auth.currentUser) {
-        if (Auth.currentUser.must_change) {
-          passwordPage.classList.remove('hidden');
-        } else {
-          showApp();
-        }
-      } else {
-        loginPage.classList.remove('hidden');
-        container.style.display = 'none';
-      }
-
-      document.getElementById('loginForm').addEventListener('submit', async e => {
-        e.preventDefault();
+    <script>
+      document.addEventListener("DOMContentLoaded", async () => {
         try {
-          const user = document.getElementById('loginUser').value.trim();
-          const pass = document.getElementById('loginPass').value;
-          await Auth.login(user, pass);
+          await Auth.init();
+        } catch (err) {
+          console.error("Erreur init Auth", err);
+        }
+
+        const loginPage = document.getElementById("loginPage");
+        const passwordPage = document.getElementById("passwordPage");
+        const container = document.querySelector(".container");
+        const logoutBtn = document.getElementById("logoutBtn");
+
+        async function showApp() {
+          loginPage.classList.add("hidden");
+          passwordPage.classList.add("hidden");
+          container.style.display = "block";
+          logoutBtn.classList.remove("hidden");
+          await startLicenceApp();
+        }
+
+        window.closeModals = function () {
+          if (window.app) app.closeForm();
+          document.getElementById("userForm").classList.add("hidden");
+        };
+
+        if (Auth.currentUser) {
           if (Auth.currentUser.must_change) {
-            loginPage.classList.add('hidden');
-            passwordPage.classList.remove('hidden');
+            passwordPage.classList.remove("hidden");
           } else {
             showApp();
           }
-        } catch (err) {
-          alert(err.message);
+        } else {
+          loginPage.classList.remove("hidden");
+          container.style.display = "none";
+          logoutBtn.classList.add("hidden");
         }
-      });
 
-      document.getElementById('passwordForm').addEventListener('submit', async e => {
-        e.preventDefault();
-        const newPass = document.getElementById('newPass').value;
-        await Auth.changePassword(newPass);
-        showApp();
-      });
+        document
+          .getElementById("loginForm")
+          .addEventListener("submit", async (e) => {
+            e.preventDefault();
+            try {
+              const user = document.getElementById("loginUser").value.trim();
+              const pass = document.getElementById("loginPass").value;
+              await Auth.login(user, pass);
+              if (Auth.currentUser.must_change) {
+                loginPage.classList.add("hidden");
+                passwordPage.classList.remove("hidden");
+              } else {
+                showApp();
+              }
+            } catch (err) {
+              alert(err.message);
+            }
+          });
 
-      document.getElementById('newUser').addEventListener('click', () => {
-        document.getElementById('userForm').classList.remove('hidden');
-      });
+        document
+          .getElementById("passwordForm")
+          .addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const newPass = document.getElementById("newPass").value;
+            await Auth.changePassword(newPass);
+            showApp();
+          });
 
-      document.getElementById('cancelUserForm').addEventListener('click', () => {
-        document.getElementById('userForm').classList.add('hidden');
-      });
+        document.getElementById("newUser").addEventListener("click", () => {
+          document.getElementById("userForm").classList.remove("hidden");
+        });
 
-      document.getElementById('userForm').querySelector('form').addEventListener('submit', async e => {
-        e.preventDefault();
-        try {
-          const l = document.getElementById('userLogin').value.trim();
-          const p = document.getElementById('userPassword').value;
-          const r = document.getElementById('userRole').value;
-          await Auth.api.createUser(l, p, r);
-          document.getElementById('userForm').classList.add('hidden');
-          alert('Utilisateur ajouté');
-        } catch(err) {
-          alert('Erreur: ' + err.message);
-        }
+        document
+          .getElementById("cancelUserForm")
+          .addEventListener("click", () => {
+            document.getElementById("userForm").classList.add("hidden");
+          });
+
+        logoutBtn.addEventListener("click", () => {
+          Auth.logout();
+          location.reload();
+        });
+
+        document
+          .getElementById("userForm")
+          .querySelector("form")
+          .addEventListener("submit", async (e) => {
+            e.preventDefault();
+            try {
+              const l = document.getElementById("userLogin").value.trim();
+              const p = document.getElementById("userPassword").value;
+              const r = document.getElementById("userRole").value;
+              await Auth.api.createUser(l, p, r);
+              document.getElementById("userForm").classList.add("hidden");
+              alert("Utilisateur ajouté");
+            } catch (err) {
+              alert("Erreur: " + err.message);
+            }
+          });
       });
-    });
-  </script>
-</body>
+    </script>
+  </body>
 </html>
