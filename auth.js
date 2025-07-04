@@ -203,16 +203,4 @@ class Auth {
   }
 }
 
-// Créer l'instance Auth et l'assigner à window IMMÉDIATEMENT
 window.Auth = new Auth();
-
-// Debug pour vérifier que toutes les méthodes sont présentes
-console.log('🔍 Auth instance créée:', {
-  type: typeof window.Auth,
-  constructor: window.Auth.constructor.name,
-  hasPermission: typeof window.Auth.hasPermission,
-  getRoleDisplayName: typeof window.Auth.getRoleDisplayName,
-  login: typeof window.Auth.login,
-  init: typeof window.Auth.init,
-  allMethods: Object.getOwnPropertyNames(Object.getPrototypeOf(window.Auth)).filter(prop => typeof window.Auth[prop] === 'function')
-});
