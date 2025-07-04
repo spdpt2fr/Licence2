@@ -3,87 +3,152 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gestion de licences</title>
+  <title>Gestionnaire de Licences - Version Frontend Pur</title>
   <link rel="stylesheet" href="style.css">
+  
+  <!-- Supabase CDN -->
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  
+  <!-- Configuration et modules -->
+  <script src="config.js"></script>
+  <script src="api.js"></script>
+  <script src="app.js"></script>
 </head>
 <body>
   <div class="container">
+    <!-- Header avec statut de connexion -->
     <header>
-      <h1>Tableau de bord IT</h1>
+      <h1>🖥️ Gestionnaire de Licences</h1>
+      <div id="appStatus" class="status-bar">
+        <span class="status-indicator offline"></span>
+        Initialisation...
+      </div>
     </header>
+
+    <!-- Alertes d'expiration -->
     <section id="alerts" class="alerts"></section>
 
+    <!-- Barre d'outils -->
     <div class="toolbar">
-      <button id="newLicence">Ajouter une licence</button>
-      <input type="text" id="search" placeholder="Recherche...">
+      <button id="newLicence" class="btn btn-primary">
+        ➕ Ajouter une licence
+      </button>
+      <div class="search-container">
+        <input type="text" id="search" placeholder="🔍 Rechercher par nom ou éditeur...">
+        <span id="licencesCount" class="count">0 licence(s)</span>
+      </div>
     </div>
 
-    <table id="licenceTable">
-      <thead>
-        <tr>
-          <th>Nom logiciel</th>
-          <th>Éditeur</th>
-          <th>Version</th>
-          <th>Type</th>
-          <th>Utilisateurs</th>
-          <th>Expiration</th>
-          <th>Coût</th>
-          <th>Assignée à</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+    <!-- Tableau des licences -->
+    <div class="table-container">
+      <table id="licenceTable">
+        <thead>
+          <tr>
+            <th>Logiciel</th>
+            <th>Éditeur</th>
+            <th>Version</th>
+            <th>Type</th>
+            <th>Sièges</th>
+            <th>Expiration</th>
+            <th>Coût</th>
+            <th>Assigné à</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Les données seront chargées dynamiquement -->
+        </tbody>
+      </table>
+    </div>
 
-    <form id="licenceForm" class="hidden">
-      <h2 id="formTitle">Nouvelle licence</h2>
-      <input type="hidden" id="licenceId">
-      <label>
-        Nom du logiciel
-        <input type="text" id="softwareName" required>
-      </label>
-      <label>
-        Éditeur
-        <input type="text" id="vendor" required>
-      </label>
-      <label>
-        Version
-        <input type="text" id="version" required>
-      </label>
-      <label>
-        Type
-        <select id="type">
-          <option value="perpetuelle">Perpétuelle</option>
-          <option value="abonnement">Abonnement</option>
-          <option value="utilisateur">Par utilisateur</option>
-        </select>
-      </label>
-      <label>
-        Nombre de licences
-        <input type="number" id="seats" min="1" value="1" required>
-      </label>
-      <label>
-        Date d'achat
-        <input type="date" id="purchaseDate" required>
-      </label>
-      <label>
-        Date d'expiration
-        <input type="date" id="expirationDate" required>
-      </label>
-      <label>
-        Coût initial
-        <input type="number" id="initialCost" min="0" step="0.01" required>
-      </label>
-      <label>
-        Assignée à (employé/département)
-        <input type="text" id="assignedTo">
-      </label>
-      <div class="form-actions">
-        <button type="submit">Enregistrer</button>
-        <button type="button" id="cancelForm">Annuler</button>
+    <!-- Formulaire modal -->
+    <div id="licenceForm" class="modal hidden">
+      <div class="modal-content">
+        <form>
+          <h2 id="formTitle">Nouvelle licence</h2>
+          
+          <input type="hidden" id="licenceId">
+          
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="softwareName">Nom du logiciel *</label>
+              <input type="text" id="softwareName" required 
+                     placeholder="Ex: Microsoft Office">
+            </div>
+            
+            <div class="form-group">
+              <label for="vendor">Éditeur *</label>
+              <input type="text" id="vendor" required 
+                     placeholder="Ex: Microsoft">
+            </div>
+            
+            <div class="form-group">
+              <label for="version">Version *</label>
+              <input type="text" id="version" required 
+                     placeholder="Ex: 2024">
+            </div>
+            
+            <div class="form-group">
+              <label for="type">Type de licence</label>
+              <select id="type">
+                <option value="perpetuelle">Perpétuelle</option>
+                <option value="abonnement">Abonnement</option>
+                <option value="utilisateur">Par utilisateur</option>
+                <option value="concurrent">Concurrent</option>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label for="seats">Nombre de sièges</label>
+              <input type="number" id="seats" min="1" value="1" required>
+            </div>
+            
+            <div class="form-group">
+              <label for="purchaseDate">Date d'achat</label>
+              <input type="date" id="purchaseDate" required>
+            </div>
+            
+            <div class="form-group">
+              <label for="expirationDate">Date d'expiration</label>
+              <input type="date" id="expirationDate" required>
+            </div>
+            
+            <div class="form-group">
+              <label for="initialCost">Coût initial (€)</label>
+              <input type="number" id="initialCost" min="0" step="0.01" required
+                     placeholder="0.00">
+            </div>
+            
+            <div class="form-group full-width">
+              <label for="assignedTo">Assigné à (employé/département)</label>
+              <input type="text" id="assignedTo" 
+                     placeholder="Ex: Service Marketing">
+            </div>
+          </div>
+          
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary">💾 Enregistrer</button>
+            <button type="button" id="cancelForm" class="btn btn-secondary">❌ Annuler</button>
+          </div>
+        </form>
       </div>
-    </form>
+    </div>
+
+    <!-- Overlay pour le modal -->
+    <div class="modal-overlay hidden" onclick="app.closeForm()"></div>
   </div>
-  <script src="script.js"></script>
+
+  <!-- Instructions de configuration -->
+  <div id="configHelp" class="config-help">
+    <h3>🔧 Configuration requise</h3>
+    <p>Pour activer la synchronisation cloud, modifiez le fichier <code>config.js</code> :</p>
+    <ol>
+      <li>Créez un projet sur <a href="https://supabase.com" target="_blank">Supabase</a></li>
+      <li>Copiez votre URL et clé publique</li>
+      <li>Mettez à jour <code>SUPABASE_CONFIG</code> dans <code>config.js</code></li>
+      <li>Créez la table <code>licences</code> avec le schéma requis</li>
+    </ol>
+    <p><em>L'application fonctionne en mode hors ligne par défaut.</em></p>
+  </div>
 </body>
 </html>
