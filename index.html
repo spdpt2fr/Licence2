@@ -12,9 +12,27 @@
   <!-- Configuration et modules -->
   <script src="config.js"></script>
   <script src="api.js"></script>
+  <script src="auth.js"></script>
   <script src="app.js"></script>
 </head>
 <body>
+  <div id="loginPage" class="login-page hidden">
+    <form id="loginForm" class="login-form">
+      <h2>Connexion</h2>
+      <input id="loginUser" type="text" placeholder="Login" required>
+      <input id="loginPass" type="password" placeholder="Mot de passe" required>
+      <button type="submit" class="btn btn-primary">Se connecter</button>
+    </form>
+  </div>
+
+  <div id="passwordPage" class="login-page hidden">
+    <form id="passwordForm" class="login-form">
+      <h2>Nouveau mot de passe</h2>
+      <input id="newPass" type="password" placeholder="Mot de passe" required>
+      <button type="submit" class="btn btn-primary">Enregistrer</button>
+    </form>
+  </div>
+
   <div class="container">
     <!-- Header avec statut de connexion -->
     <header>
@@ -32,6 +50,9 @@
     <div class="toolbar">
       <button id="newLicence" class="btn btn-primary">
         ➕ Ajouter une licence
+      </button>
+      <button id="newUser" class="btn btn-secondary">
+        👤 Nouvel utilisateur
       </button>
       <div class="search-container">
         <input type="text" id="search" placeholder="🔍 Rechercher par nom ou éditeur...">
@@ -134,9 +155,115 @@
       </div>
     </div>
 
+    <!-- Modal ajout utilisateur -->
+    <div id="userForm" class="modal hidden">
+      <div class="modal-content">
+        <form>
+          <h2>Nouvel utilisateur</h2>
+          <div class="form-group">
+            <label for="userLogin">Login</label>
+            <input id="userLogin" type="text" required>
+          </div>
+          <div class="form-group">
+            <label for="userPassword">Mot de passe</label>
+            <input id="userPassword" type="password" required>
+          </div>
+          <div class="form-group">
+            <label for="userRole">Rôle</label>
+            <select id="userRole">
+              <option value="read">Lecture</option>
+              <option value="write">Écriture</option>
+            </select>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Ajouter</button>
+            <button type="button" id="cancelUserForm" class="btn btn-secondary">Annuler</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
     <!-- Overlay pour le modal -->
-    <div class="modal-overlay hidden" onclick="app.closeForm()"></div>
+    <div class="modal-overlay hidden" onclick="closeModals()"></div>
   </div>
 
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      await Auth.init();
+
+      const loginPage = document.getElementById('loginPage');
+      const passwordPage = document.getElementById('passwordPage');
+      const container = document.querySelector('.container');
+
+      async function showApp() {
+        loginPage.classList.add('hidden');
+        passwordPage.classList.add('hidden');
+        container.style.display = 'block';
+        await startLicenceApp();
+      }
+
+      window.closeModals = function() {
+        if (window.app) app.closeForm();
+        document.getElementById('userForm').classList.add('hidden');
+      };
+
+      if (Auth.currentUser) {
+        if (Auth.currentUser.must_change) {
+          passwordPage.classList.remove('hidden');
+        } else {
+          showApp();
+        }
+      } else {
+        loginPage.classList.remove('hidden');
+        container.style.display = 'none';
+      }
+
+      document.getElementById('loginForm').addEventListener('submit', async e => {
+        e.preventDefault();
+        try {
+          const user = document.getElementById('loginUser').value.trim();
+          const pass = document.getElementById('loginPass').value;
+          await Auth.login(user, pass);
+          if (Auth.currentUser.must_change) {
+            loginPage.classList.add('hidden');
+            passwordPage.classList.remove('hidden');
+          } else {
+            showApp();
+          }
+        } catch (err) {
+          alert(err.message);
+        }
+      });
+
+      document.getElementById('passwordForm').addEventListener('submit', async e => {
+        e.preventDefault();
+        const newPass = document.getElementById('newPass').value;
+        await Auth.changePassword(newPass);
+        showApp();
+      });
+
+      document.getElementById('newUser').addEventListener('click', () => {
+        document.getElementById('userForm').classList.remove('hidden');
+      });
+
+      document.getElementById('cancelUserForm').addEventListener('click', () => {
+        document.getElementById('userForm').classList.add('hidden');
+      });
+
+      document.getElementById('userForm').querySelector('form').addEventListener('submit', async e => {
+        e.preventDefault();
+        try {
+          const l = document.getElementById('userLogin').value.trim();
+          const p = document.getElementById('userPassword').value;
+          const r = document.getElementById('userRole').value;
+          await Auth.api.createUser(l, p, r);
+          document.getElementById('userForm').classList.add('hidden');
+          alert('Utilisateur ajouté');
+        } catch(err) {
+          alert('Erreur: ' + err.message);
+        }
+      });
+    });
+  </script>
 </body>
 </html>

@@ -7,6 +7,7 @@ const SUPABASE_CONFIG = {
 // Configuration de l'application
 const APP_CONFIG = {
   tableName: 'licences',
+  usersTable: 'users',
   enableOfflineMode: true,
   debugMode: true
 };
