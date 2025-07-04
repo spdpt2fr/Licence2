@@ -52,9 +52,12 @@
           <span class="status-indicator offline"></span>
           Initialisation...
         </div>
-        <button id="logoutBtn" class="btn btn-secondary hidden">
-          Se déconnecter
-        </button>
+        <div class="user-info">
+          <span id="currentUserDisplay" class="current-user hidden"></span>
+          <button id="logoutBtn" class="btn btn-secondary hidden">
+            Se déconnecter
+          </button>
+        </div>
       </header>
 
       <!-- Alertes d'expiration -->
@@ -65,7 +68,7 @@
         <button id="newLicence" class="btn btn-primary">
           ➕ Ajouter une licence
         </button>
-        <button id="newUser" class="btn btn-secondary">
+        <button id="newUser" class="btn btn-secondary hidden">
           👤 Nouvel utilisateur
         </button>
         <div class="search-container">
@@ -219,6 +222,7 @@
               <select id="userRole">
                 <option value="read">Lecture</option>
                 <option value="write">Écriture</option>
+                <option value="admin">Admin</option>
               </select>
             </div>
             <div class="form-actions">
@@ -267,12 +271,32 @@
         const passwordPage = document.getElementById("passwordPage");
         const container = document.querySelector(".container");
         const logoutBtn = document.getElementById("logoutBtn");
+        const currentUserDisplay = document.getElementById("currentUserDisplay");
+        const newUserBtn = document.getElementById("newUser");
+
+        // Fonction pour mettre à jour l'affichage des permissions
+        function updateUIPermissions() {
+          if (window.Auth.currentUser) {
+            // Afficher le nom d'utilisateur et le rôle
+            const roleDisplayName = window.Auth.getRoleDisplayName();
+            currentUserDisplay.textContent = `${window.Auth.currentUser.login} (${roleDisplayName})`;
+            currentUserDisplay.classList.remove("hidden");
+            
+            // Afficher/masquer le bouton "Nouvel utilisateur" selon les permissions
+            if (window.Auth.hasPermission('create_user')) {
+              newUserBtn.classList.remove("hidden");
+            } else {
+              newUserBtn.classList.add("hidden");
+            }
+          }
+        }
 
         async function showApp() {
           loginPage.classList.add("hidden");
           passwordPage.classList.add("hidden");
           container.style.display = "block";
           logoutBtn.classList.remove("hidden");
+          updateUIPermissions();
           await startLicenceApp();
         }
 
@@ -292,6 +316,7 @@
           loginPage.classList.remove("hidden");
           container.style.display = "none";
           logoutBtn.classList.add("hidden");
+          currentUserDisplay.classList.add("hidden");
         }
 
         // Gestionnaire de connexion
@@ -337,9 +362,13 @@
             }
           });
 
-        // Autres gestionnaires d'événements...
+        // Gestionnaire bouton "Nouvel utilisateur" avec vérification des permissions
         document.getElementById("newUser").addEventListener("click", () => {
-          document.getElementById("userForm").classList.remove("hidden");
+          if (window.Auth.hasPermission('create_user')) {
+            document.getElementById("userForm").classList.remove("hidden");
+          } else {
+            alert("Vous n'avez pas les permissions pour créer des utilisateurs.");
+          }
         });
 
         document
@@ -353,18 +382,30 @@
           location.reload();
         });
 
+        // Gestionnaire de création d'utilisateur avec vérification des permissions
         document
           .getElementById("userForm")
           .querySelector("form")
           .addEventListener("submit", async (e) => {
             e.preventDefault();
+            
+            // Vérifier les permissions avant de créer
+            if (!window.Auth.hasPermission('create_user')) {
+              alert("Vous n'avez pas les permissions pour créer des utilisateurs.");
+              return;
+            }
+            
             try {
               const l = document.getElementById("userLogin").value.trim();
               const p = document.getElementById("userPassword").value;
               const r = document.getElementById("userRole").value;
               await window.Auth.api.createUser(l, p, r);
               document.getElementById("userForm").classList.add("hidden");
-              alert("Utilisateur ajouté");
+              // Reset du formulaire
+              document.getElementById("userLogin").value = "";
+              document.getElementById("userPassword").value = "";
+              document.getElementById("userRole").value = "read";
+              alert("Utilisateur ajouté avec succès !");
             } catch (err) {
               alert("Erreur: " + err.message);
             }
