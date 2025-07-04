@@ -39,6 +39,7 @@ Application web simple et fonctionnelle pour gérer les licences logicielles d'e
 ├── auth.js             # Authentification
 ├── app.js              # Interface utilisateur
 ├── package.json        # Métadonnées projet
+├── .gitignore          # Git config
 └── README.md           # Documentation
 ```
 
