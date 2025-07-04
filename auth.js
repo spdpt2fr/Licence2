@@ -25,7 +25,7 @@ class UsersAPI {
         users.push({
           login: "Admin",
           password: btoa("Admin"),
-          role: "write",
+          role: "admin", // Changé de "write" à "admin"
           must_change: true,
         });
         localStorage.setItem("users", JSON.stringify(users));
@@ -47,7 +47,7 @@ class UsersAPI {
         {
           login: "Admin",
           password: btoa("Admin"),
-          role: "write",
+          role: "admin", // Changé de "write" à "admin"
           must_change: true,
         },
       ]);
@@ -155,6 +155,35 @@ class Auth {
     });
     this.currentUser.must_change = false;
     this.setCookie("session_user", btoa(JSON.stringify(this.currentUser)), 3);
+  }
+
+  // Nouvelle méthode pour vérifier les permissions
+  hasPermission(permission) {
+    if (!this.currentUser) return false;
+    
+    switch (permission) {
+      case 'read':
+        return ['read', 'write', 'admin'].includes(this.currentUser.role);
+      case 'write':
+        return ['write', 'admin'].includes(this.currentUser.role);
+      case 'admin':
+        return this.currentUser.role === 'admin';
+      case 'create_user':
+        return this.currentUser.role === 'admin';
+      default:
+        return false;
+    }
+  }
+
+  // Méthode pour obtenir le nom d'affichage du rôle
+  getRoleDisplayName(role = null) {
+    const userRole = role || this.currentUser?.role;
+    switch (userRole) {
+      case 'read': return 'Lecture';
+      case 'write': return 'Écriture';
+      case 'admin': return 'Admin';
+      default: return 'Inconnu';
+    }
   }
 
   logout() {
