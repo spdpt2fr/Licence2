@@ -46,9 +46,11 @@ const SUPABASE_CONFIG = {
 };
 ```
 
-### **2. Créer la table**
+### **2. Créer les tables**
 
-Exécuter ce SQL dans l'éditeur Supabase :
+Exécuter ces SQL dans l'éditeur Supabase :
+
+#### Table `licences`
 
 ```sql
 -- Créer la table licences
@@ -82,9 +84,25 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
-CREATE TRIGGER update_licences_updated_at 
-  BEFORE UPDATE ON licences 
+CREATE TRIGGER update_licences_updated_at
+  BEFORE UPDATE ON licences
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+```
+
+#### Table `users`
+
+```sql
+-- Créer la table des utilisateurs
+CREATE TABLE users (
+  login TEXT PRIMARY KEY,
+  password TEXT NOT NULL,
+  role TEXT NOT NULL DEFAULT 'read',
+  must_change BOOLEAN NOT NULL DEFAULT false,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public access" ON users FOR ALL USING (true);
 ```
 
 ### **3. Déploiement**
