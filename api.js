@@ -4,6 +4,7 @@ class LicencesAPI {
     this.supabase = null;
     this.fallbackData = [];
     this.useOfflineMode = false;
+    this.lastLicencesCount = 0; // Nouveau: stocker le nombre de licences
   }
 
   // Initialisation
@@ -53,6 +54,7 @@ class LicencesAPI {
           updated_at: new Date().toISOString()
         };
         this.fallbackData.push(offlineData);
+        this.lastLicencesCount = this.fallbackData.length;
         console.log('💾 Licence sauvegardée en mode hors ligne');
         return { success: true, data: offlineData };
       }
@@ -88,6 +90,7 @@ class LicencesAPI {
       };
       
       this.fallbackData.push(fallbackData);
+      this.lastLicencesCount = this.fallbackData.length;
       console.log('💾 Licence sauvegardée en mode fallback');
       return { success: true, data: fallbackData, fallback: true };
     }
@@ -98,6 +101,7 @@ class LicencesAPI {
     try {
       if (this.useOfflineMode) {
         console.log('📱 Chargement depuis mode hors ligne');
+        this.lastLicencesCount = this.fallbackData.length;
         return { success: true, data: this.fallbackData };
       }
 
@@ -108,12 +112,14 @@ class LicencesAPI {
 
       if (error) throw error;
 
+      this.lastLicencesCount = data.length;
       console.log(`✅ ${data.length} licences chargées depuis Supabase`);
       return { success: true, data: data };
 
     } catch (error) {
       console.error('❌ Erreur chargement licences:', error);
       console.log('💾 Fallback vers données hors ligne');
+      this.lastLicencesCount = this.fallbackData.length;
       return { success: true, data: this.fallbackData, fallback: true };
     }
   }
@@ -176,6 +182,7 @@ class LicencesAPI {
         const index = this.fallbackData.findIndex(l => l.id === id);
         if (index !== -1) {
           this.fallbackData.splice(index, 1);
+          this.lastLicencesCount = this.fallbackData.length;
           console.log('💾 Licence supprimée en mode hors ligne');
           return { success: true };
         } else {
@@ -209,7 +216,7 @@ class LicencesAPI {
   getStatus() {
     return {
       online: !this.useOfflineMode,
-      licencesCount: this.useOfflineMode ? this.fallbackData.length : 'unknown',
+      licencesCount: this.lastLicencesCount, // Utiliser le compteur mis à jour
       mode: this.useOfflineMode ? 'offline' : 'supabase'
     };
   }
