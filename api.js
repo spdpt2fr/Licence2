@@ -31,8 +31,8 @@ class LicencesAPI {
   // CREATE - Créer une nouvelle licence
   async create(licence) {
     try {
+      // Préparer les données pour Supabase (SANS id - auto-généré)
       const licenceData = {
-        id: licence.id || this.generateId(),
         software_name: licence.softwareName,
         vendor: licence.vendor,
         version: licence.version,
@@ -41,19 +41,23 @@ class LicencesAPI {
         purchase_date: licence.purchaseDate,
         expiration_date: licence.expirationDate,
         initial_cost: licence.initialCost || 0,
-        assigned_to: licence.assignedTo || null,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        assigned_to: licence.assignedTo || null
       };
 
       if (this.useOfflineMode) {
-        // Mode hors ligne
-        this.fallbackData.push(licenceData);
+        // Mode hors ligne - ajouter un ID généré
+        const offlineData = {
+          id: this.generateId(),
+          ...licenceData,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+        this.fallbackData.push(offlineData);
         console.log('💾 Licence sauvegardée en mode hors ligne');
-        return { success: true, data: licenceData };
+        return { success: true, data: offlineData };
       }
 
-      // Mode Supabase
+      // Mode Supabase - laisser l'ID être auto-généré
       const { data, error } = await this.supabase
         .from(APP_CONFIG.tableName)
         .insert([licenceData])
@@ -68,8 +72,8 @@ class LicencesAPI {
       console.error('❌ Erreur création licence:', error);
       
       // Fallback vers mode hors ligne
-      const licenceData = {
-        id: licence.id || this.generateId(),
+      const fallbackData = {
+        id: this.generateId(),
         software_name: licence.softwareName,
         vendor: licence.vendor,
         version: licence.version,
@@ -83,9 +87,9 @@ class LicencesAPI {
         updated_at: new Date().toISOString()
       };
       
-      this.fallbackData.push(licenceData);
+      this.fallbackData.push(fallbackData);
       console.log('💾 Licence sauvegardée en mode fallback');
-      return { success: true, data: licenceData, fallback: true };
+      return { success: true, data: fallbackData, fallback: true };
     }
   }
 
