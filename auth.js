@@ -25,7 +25,7 @@ class UsersAPI {
         users.push({
           login: "Admin",
           password: btoa("Admin"),
-          role: "admin", // Changé de "write" à "admin"
+          role: "admin",
           must_change: true,
         });
         localStorage.setItem("users", JSON.stringify(users));
@@ -47,7 +47,7 @@ class UsersAPI {
         {
           login: "Admin",
           password: btoa("Admin"),
-          role: "admin", // Changé de "write" à "admin"
+          role: "admin",
           must_change: true,
         },
       ]);
@@ -157,7 +157,6 @@ class Auth {
     this.setCookie("session_user", btoa(JSON.stringify(this.currentUser)), 3);
   }
 
-  // Nouvelle méthode pour vérifier les permissions
   hasPermission(permission) {
     if (!this.currentUser) return false;
     
@@ -175,7 +174,6 @@ class Auth {
     }
   }
 
-  // Méthode pour obtenir le nom d'affichage du rôle
   getRoleDisplayName(role = null) {
     const userRole = role || this.currentUser?.role;
     switch (userRole) {
