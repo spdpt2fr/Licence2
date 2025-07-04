@@ -303,7 +303,7 @@ class LicenceApp {
 
   // Éditer une licence
   editLicence(id) {
-    const licence = this.licences.find(l => l.id === id);
+    const licence = this.licences.find(l => String(l.id) === String(id));
     if (licence) {
       this.openForm(licence);
     }
@@ -311,7 +311,7 @@ class LicenceApp {
 
   // Supprimer une licence
   async deleteLicence(id) {
-    const licence = this.licences.find(l => l.id === id);
+    const licence = this.licences.find(l => String(l.id) === String(id));
     if (!licence) return;
     
     if (!confirm(`Êtes-vous sûr de vouloir supprimer la licence "${licence.softwareName}" ?`)) {
