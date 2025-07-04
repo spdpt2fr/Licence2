@@ -384,7 +384,6 @@ let app;
 window.addEventListener('DOMContentLoaded', async () => {
   app = new LicenceApp();
   await app.init();
+  // Export global après initialisation
+  window.app = app;
 });
-
-// Export global
-window.app = app;
