@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Licence2 v3.0 - Gestionnaire de Licences</title>
+  
+  <!-- Meta tags SEO et PWA -->
+  <meta name="description" content="Gestionnaire de licences logicielles avec architecture modulaire">
+  <meta name="keywords" content="licence, logiciel, gestion, supabase, javascript">
+  <meta name="author" content="spdpt2fr">
+  
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#667eea">
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  
+  <!-- Styles modulaires -->
+  <link rel="stylesheet" href="src/styles/base.css">
+  <link rel="stylesheet" href="src/styles/components.css">
+  <link rel="stylesheet" href="src/styles/layout.css">
+  <link rel="stylesheet" href="src/styles/themes.css">
+  
+  <!-- Supabase CDN -->
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+</head>
+<body>
+  <!-- Application Container -->
+  <div id="app" class="app-container">
+    
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="loading-screen">
+      <div class="loading-spinner"></div>
+      <p>Chargement de Licence2 v3.0...</p>
+    </div>
+    
+    <!-- Login Page -->
+    <div id="login-page" class="page login-page hidden">
+      <div class="login-container">
+        <div class="login-header">
+          <h1>🖥️ Licence2</h1>
+          <p>Gestionnaire de licences v3.0</p>
+        </div>
+        
+        <form id="login-form" class="login-form">
+          <div class="form-group">
+            <label for="login-user">Nom d'utilisateur</label>
+            <input 
+              id="login-user" 
+              type="text" 
+              required 
+              placeholder="Entrez votre login"
+              autocomplete="username"
+            >
+          </div>
+          
+          <div class="form-group">
+            <label for="login-password">Mot de passe</label>
+            <input 
+              id="login-password" 
+              type="password" 
+              required 
+              placeholder="Entrez votre mot de passe"
+              autocomplete="current-password"
+            >
+          </div>
+          
+          <button type="submit" class="btn btn-primary btn-login">
+            <span class="btn-text">Se connecter</span>
+            <div class="btn-spinner hidden"></div>
+          </button>
+          
+          <p class="login-hint">
+            Identifiants par défaut : <strong>Admin/Admin</strong>
+          </p>
+        </form>
+      </div>
+    </div>
+    
+    <!-- Password Change Page -->
+    <div id="password-page" class="page password-page hidden">
+      <div class="password-container">
+        <div class="password-header">
+          <h2>🔒 Nouveau mot de passe requis</h2>
+          <p>Veuillez définir un nouveau mot de passe sécurisé</p>
+        </div>
+        
+        <form id="password-form" class="password-form">
+          <div class="form-group">
+            <label for="new-password">Nouveau mot de passe</label>
+            <input 
+              id="new-password" 
+              type="password" 
+              required 
+              minlength="6"
+              placeholder="Minimum 6 caractères"
+            >
+          </div>
+          
+          <button type="submit" class="btn btn-primary">
+            Définir le mot de passe
+          </button>
+        </form>
+      </div>
+    </div>
+    
+    <!-- Main Application -->
+    <div id="main-app" class="page main-app hidden">
+      
+      <!-- Header -->
+      <header id="app-header" class="app-header">
+        <div class="header-left">
+          <h1 class="app-title">🖥️ Licence2 <span class="version">v3.0</span></h1>
+          <div id="connection-status" class="connection-status">
+            <span class="status-indicator offline"></span>
+            <span class="status-text">Initialisation...</span>
+          </div>
+        </div>
+        
+        <div class="header-right">
+          <div id="user-info" class="user-info hidden">
+            <span class="user-avatar">👤</span>
+            <span id="current-user" class="user-name"></span>
+          </div>
+          <button id="logout-btn" class="btn btn-secondary btn-logout hidden">
+            Se déconnecter
+          </button>
+        </div>
+      </header>
+      
+      <!-- Alerts Section -->
+      <section id="alerts-container" class="alerts-container">
+        <!-- Alertes d'expiration dynamiques -->
+      </section>
+      
+      <!-- Toolbar -->
+      <div id="app-toolbar" class="app-toolbar">
+        <div class="toolbar-left">
+          <button id="btn-new-licence" class="btn btn-primary">
+            ➕ Nouvelle licence
+          </button>
+          <button id="btn-new-user" class="btn btn-secondary hidden">
+            👤 Nouvel utilisateur
+          </button>
+        </div>
+        
+        <div class="toolbar-center">
+          <div class="search-container">
+            <input 
+              id="search-input" 
+              type="text" 
+              placeholder="🔍 Rechercher..."
+              class="search-input"
+            >
+            <span id="results-count" class="results-count">0 licence(s)</span>
+          </div>
+        </div>
+        
+        <div class="toolbar-right">
+          <button id="btn-export" class="btn btn-secondary">📤 Export</button>
+          <button id="btn-import" class="btn btn-secondary">📥 Import</button>
+          <input type="file" id="import-file" accept=".csv" class="hidden">
+        </div>
+      </div>
+      
+      <!-- Main Content -->
+      <main id="main-content" class="main-content">
+        
+        <!-- Licences Table Container -->
+        <div id="table-container" class="table-container">
+          <table id="licences-table" class="licences-table">
+            <thead>
+              <tr>
+                <th data-sort="software_name">Logiciel</th>
+                <th data-sort="vendor">Éditeur</th>
+                <th data-sort="version">Version</th>
+                <th data-sort="type">Type</th>
+                <th data-sort="seats">Sièges</th>
+                <th data-sort="expiration_date">Expiration</th>
+                <th data-sort="initial_cost">Coût</th>
+                <th data-sort="assigned_to">Assigné à</th>
+                <th class="actions-column">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="licences-tbody">
+              <!-- Contenu dynamique -->
+            </tbody>
+          </table>
+          
+          <!-- Empty State -->
+          <div id="empty-state" class="empty-state hidden">
+            <div class="empty-icon">📄</div>
+            <h3>Aucune licence trouvée</h3>
+            <p>Commencez par ajouter votre première licence</p>
+            <button class="btn btn-primary" onclick="document.getElementById('btn-new-licence').click()">
+              ➕ Ajouter une licence
+            </button>
+          </div>
+        </div>
+        
+      </main>
+    </div>
+    
+    <!-- Modal Overlay -->
+    <div id="modal-overlay" class="modal-overlay hidden"></div>
+    
+    <!-- Toast Container -->
+    <div id="toast-container" class="toast-container"></div>
+  </div>
+  
+  <!-- Scripts modulaires -->
+  <script type="module">
+    // Point d'entrée principal de l'application v3.0
+    import './src/app.js';
+  </script>
+</body>
+</html>
