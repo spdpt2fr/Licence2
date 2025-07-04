@@ -1,215 +1,161 @@
-# 🚀 Licence2 - Frontend Pur
+# Gestionnaire de Licences - Clean Version
 
-**Gestionnaire de licences logicielles simplifié** - Version frontend pur avec Supabase
+## 🎯 Application de Gestion des Licences Logicielles
 
-## ✨ **Nouveautés Version 2.0**
+Application web simple et fonctionnelle pour gérer les licences logicielles d'entreprise.
 
-### **🏗️ Architecture Simplifiée**
-- ❌ **Suppression du backend Express** (plus de server.js)
-- ✅ **Frontend pur** avec Supabase direct
-- ✅ **Déploiement simple** sur Netlify
-- ✅ **Mode hors ligne** automatique
+## ✨ Fonctionnalités
 
-### **🎯 Avantages**
-- **Zéro configuration serveur** 
-- **Déploiement instantané** sur Netlify
-- **Coûts réduits** (pas de serveur backend)
-- **Maintenance simplifiée** (un seul codebase)
-- **Mode offline** intégré
+- **Gestion des licences** : Créer, modifier, supprimer les licences
+- **Alertes d'expiration** : Notification automatique des licences qui expirent
+- **Authentification** : Système de connexion avec rôles (lecture/écriture/admin)
+- **Import/Export CSV** : Sauvegarde et import de données
+- **Mode hors ligne** : Fonctionnement en cas de perte de connexion
+- **Interface responsive** : Compatible mobile et desktop
 
-## 📁 **Structure du Projet**
+## 🚀 Déploiement
 
+**URL de production** : https://licenceskay.netlify.app
+
+### Connexion par défaut
+- **Login** : `Admin`
+- **Mot de passe** : `Admin`
+
+## 🏗️ Architecture Technique
+
+### Stack
+- **Frontend** : HTML5, CSS3, JavaScript ES6+
+- **Base de données** : Supabase
+- **Hébergement** : Netlify
+- **Authentification** : Cookie-based sessions
+
+### Structure des fichiers
 ```
-Licence2/
-├── index.html          # Interface utilisateur
+📁 Licence2/
+├── index.html          # Page principale
+├── style.css           # Styles CSS
 ├── config.js           # Configuration Supabase
-├── api.js              # Couche API pour CRUD
-├── app.js              # Logique applicative
-├── style.css           # Styles modernes
-├── README.md           # Cette documentation
-│
-├── index-old.html      # Ancienne interface
+├── api.js              # API Licences
+├── auth.js             # Authentification
+├── app.js              # Interface utilisateur
+├── package.json        # Métadonnées projet
+└── README.md           # Documentation
 ```
 
-## 🚀 **Installation & Configuration**
+## 🛠️ Développement Local
 
-### **1. Configuration Supabase**
+```bash
+# Cloner le repository
+git clone https://github.com/spdpt2fr/Licence2.git
+cd Licence2
 
-1. **Créer un projet** sur [supabase.com](https://supabase.com)
-2. **Récupérer les clés** dans Settings > API
-3. **Modifier `config.js`** :
+# Servir localement (optionnel)
+python -m http.server 8000
+# ou
+npx serve .
 
-```javascript
-const SUPABASE_CONFIG = {
-  url: 'https://votre-projet.supabase.co',
-  anon_key: 'votre-cle-publique'
-};
+# Ouvrir http://localhost:8000
 ```
 
-### **2. Créer la table**
+## 📊 Base de Données
 
-Exécuter ce SQL dans l'éditeur Supabase :
-
+### Table `licences`
 ```sql
--- Créer la table licences
 CREATE TABLE licences (
-  id TEXT PRIMARY KEY,
-  software_name TEXT NOT NULL,
-  vendor TEXT NOT NULL,
-  version TEXT NOT NULL,
-  type TEXT NOT NULL CHECK (type IN ('perpetuelle', 'abonnement', 'utilisateur', 'concurrent')),
-  seats INTEGER NOT NULL DEFAULT 1,
-  purchase_date DATE NOT NULL,
-  expiration_date DATE NOT NULL,
-  initial_cost REAL NOT NULL DEFAULT 0,
-  assigned_to TEXT,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  id SERIAL PRIMARY KEY,
+  software_name VARCHAR(255) NOT NULL,
+  vendor VARCHAR(255) NOT NULL,
+  version VARCHAR(100),
+  type VARCHAR(50),
+  seats INTEGER DEFAULT 1,
+  purchase_date DATE,
+  expiration_date DATE,
+  initial_cost DECIMAL(10,2),
+  assigned_to VARCHAR(255),
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
 );
-
--- Activer RLS (Row Level Security)
-ALTER TABLE licences ENABLE ROW LEVEL SECURITY;
-
--- Politique d'accès public (à adapter selon vos besoins)
-CREATE POLICY "Public access" ON licences FOR ALL USING (true);
-
--- Trigger pour updated_at
-CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
-BEGIN
-  NEW.updated_at = CURRENT_TIMESTAMP;
-  RETURN NEW;
-END;
-$$ language 'plpgsql';
-
-CREATE TRIGGER update_licences_updated_at 
-  BEFORE UPDATE ON licences 
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 ```
 
-### **3. Déploiement**
-
-**Sur Netlify :**
-1. Connecter votre repo GitHub
-2. Définir le répertoire de build : `./`
-3. Fichier d'entrée : `index.html`
-4. Déployer ! 🎉
-
-### **4. Connexion initiale**
-
-Après le premier lancement, utilisez l'identifiant **Admin** avec le mot de passe **Admin** pour vous connecter. Vous pourrez changer ce mot de passe à la première connexion.
-
-## 🎯 **Fonctionnalités**
-
-### **✅ CRUD Complet**
-- **Créer** de nouvelles licences
-- **Lire** et rechercher
-- **Modifier** les données
-- **Supprimer** les licences
-
-### **🚨 Système d'Alertes**
-- **Rouge** : Expiré ou < 7 jours
-- **Orange** : 8-15 jours
-- **Jaune** : 16-30 jours
-- **Vert** : > 30 jours
-
-### **🔍 Recherche & Filtrage**
-- Recherche temps réel
-- Filtrage par nom/éditeur
-- Compteur de résultats
-
-### **💾 Mode Hors Ligne**
-- Fonctionne sans Supabase
-- Données en mémoire locale
-- Sync automatique quand connecté
-
-## 🔧 **Développement**
-
-### **Structure du Code**
-
-**config.js** - Configuration centralisée
-```javascript
-const SUPABASE_CONFIG = { /* ... */ };
-const APP_CONFIG = { /* ... */ };
+### Table `users`
+```sql
+CREATE TABLE users (
+  id SERIAL PRIMARY KEY,
+  login VARCHAR(50) UNIQUE NOT NULL,
+  password TEXT NOT NULL,
+  role VARCHAR(20) DEFAULT 'read',
+  must_change BOOLEAN DEFAULT false,
+  created_at TIMESTAMP DEFAULT NOW()
+);
 ```
 
-**api.js** - Couche d'abstraction données
-```javascript
-class LicencesAPI {
-  async create(licence) { /* ... */ }
-  async getAll() { /* ... */ }
-  async update(id, licence) { /* ... */ }
-  async delete(id) { /* ... */ }
-}
+## 🔐 Système d'Authentification
+
+### Rôles utilisateur
+- **read** : Consultation uniquement
+- **write** : Lecture + création/modification des licences
+- **admin** : Toutes permissions + gestion des utilisateurs
+
+### Sécurité
+- Mots de passe encodés en Base64
+- Sessions basées sur cookies HTTPOnly
+- Validation côté client et serveur
+
+## 📈 Fonctionnalités Avancées
+
+### Alertes d'Expiration
+- **Rouge** : Licences expirées
+- **Jaune** : Licences expirant dans les 30 jours
+- Tri automatique par priorité
+
+### Import/Export CSV
+- Format CSV standard avec headers
+- Gestion des caractères spéciaux
+- Validation des données à l'import
+
+### Mode Offline
+- Sauvegarde automatique en localStorage
+- Synchronisation au retour de connexion
+- Interface dégradée gracieuse
+
+## 🐛 Résolution de Problèmes
+
+### Cache Browser
+Si l'application ne se charge pas correctement :
+```bash
+# Vider le cache navigateur
+Ctrl+F5 (Windows) / Cmd+Shift+R (Mac)
+
+# Ou ouvrir en mode privé
+Ctrl+Shift+N (Chrome) / Ctrl+Shift+P (Firefox)
 ```
 
-**app.js** - Logique interface utilisateur
-```javascript
-class LicenceApp {
-  async init() { /* ... */ }
-  render() { /* ... */ }
-  showAlerts() { /* ... */ }
-}
-```
+### Erreurs Supabase
+Vérifier la configuration dans `config.js` :
+- URL Supabase correcte
+- Clé API valide
+- Tables créées
 
-### **Personnalisation**
+## 📋 Roadmap
 
-**Modifier les types de licences** dans `app.js` :
-```javascript
-// Dans openForm()
-<select id="type">
-  <option value="perpetuelle">Perpétuelle</option>
-  <option value="abonnement">Abonnement</option>
-  <option value="custom">Votre Type</option>
-</select>
-```
+- [ ] Interface d'administration avancée
+- [ ] Notifications par email
+- [ ] API REST publique
+- [ ] Dashboard analytique
+- [ ] Support multi-tenant
 
-**Changer les seuils d'alerte** dans `app.js` :
-```javascript
-// Dans showAlerts()
-if (diff <= 14) level = 'danger';      // 14 jours au lieu de 7
-else if (diff <= 30) level = 'warn';   // etc.
-```
+## 🤝 Contribution
 
-## 🆚 **Comparaison Versions**
+1. Fork le projet
+2. Créer une branche feature (`git checkout -b feature/amazing-feature`)
+3. Commit les changements (`git commit -m 'Add amazing feature'`)
+4. Push la branche (`git push origin feature/amazing-feature`)
+5. Ouvrir une Pull Request
 
-| Fonctionnalité | **V1 (Backend)** | **V2 (Frontend)** |
-|----------------|------------------|-------------------|
-| **Serveur** | Node.js requis | ❌ Aucun |
-| **Base de données** | PostgreSQL + Express | Supabase direct |
-| **Déploiement** | Heroku/Railway | Netlify simple |
-| **Coût** | Serveur payant | Gratuit |
-| **Maintenance** | 2 applications | 1 application |
-| **Hors ligne** | ❌ Non | ✅ Oui |
-| **Complexité** | Élevée | Simple |
+## 📝 Licence
 
-## 📊 **Migration Depuis V1**
-
-Pour migrer vos données PostgreSQL vers Supabase :
-
-1. **Exporter** vos données V1
-2. **Adapter** le schéma (noms de colonnes)
-3. **Importer** dans Supabase
-4. **Tester** la nouvelle version
-
-## 🛠️ **Troubleshooting**
-
-**Problème de configuration :**
-- Vérifier `SUPABASE_CONFIG` dans `config.js`
-- Contrôler les politiques RLS dans Supabase
-
-**Mode hors ligne persistant :**
-- Vérifier la console (F12) pour les erreurs
-- Tester manuellement l'API Supabase
-
-**Erreurs de CORS :**
-- Ajouter votre domaine dans Supabase Settings > API
-
-## 📞 **Support**
-
-- **GitHub Issues** : [Licence2 Issues](https://github.com/spdpt2fr/Licence2/issues)
-- **Documentation Supabase** : [docs.supabase.com](https://docs.supabase.com)
+Ce projet est sous licence MIT. Voir le fichier `LICENSE` pour plus de détails.
 
 ---
 
-**🎉 Version 2.0 - Architecture Frontend Pur - Plus simple, plus rapide !**
+**Fait avec ❤️ pour la gestion d'entreprise**
