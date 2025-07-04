@@ -1,0 +1,5 @@
+// TRIGGER DÉPLOIEMENT VERSION SIMPLE FONCTIONNELLE
+// Date: 04/07/2025 19:25
+// Commit: e37cc8e - Retour version 943b25a qui fonctionnait
+// Architecture: Simple et efficace (index.html + 4 JS + CSS)
+console.log('🔄 Déploiement version simple fonctionnelle');
