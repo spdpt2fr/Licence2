@@ -276,9 +276,13 @@
 
         // Fonction pour mettre à jour l'affichage des permissions
         function updateUIPermissions() {
-          if (window.Auth.currentUser) {
+          if (window.Auth && window.Auth.currentUser) {
+            // Debug - vérifier que la méthode existe
+            console.log('window.Auth:', window.Auth);
+            console.log('getRoleDisplayName exists:', typeof window.Auth.getRoleDisplayName);
+            
             // Afficher le nom d'utilisateur et le rôle
-            const roleDisplayName = window.Auth.getRoleDisplayName();
+            const roleDisplayName = window.Auth.getRoleDisplayName ? window.Auth.getRoleDisplayName() : 'Utilisateur';
             currentUserDisplay.textContent = `${window.Auth.currentUser.login} (${roleDisplayName})`;
             currentUserDisplay.classList.remove("hidden");
             
