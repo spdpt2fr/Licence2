@@ -205,6 +205,26 @@ class LicenceApp {
     if (form) {
       form.addEventListener('submit', (e) => this.handleFormSubmit(e));
     }
+
+    // Export CSV
+    const exportBtn = document.getElementById('exportCsv');
+    if (exportBtn) {
+      exportBtn.addEventListener('click', () => this.exportCSV());
+    }
+
+    // Import CSV
+    const importBtn = document.getElementById('importCsv');
+    const importInput = document.getElementById('importFile');
+    if (importBtn && importInput) {
+      importBtn.addEventListener('click', () => importInput.click());
+      importInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          this.importCSV(file);
+        }
+        importInput.value = '';
+      });
+    }
     
     // Bouton annuler
     const cancelBtn = document.getElementById('cancelForm');
@@ -352,12 +372,98 @@ class LicenceApp {
   updateStatus() {
     const statusDiv = document.getElementById('appStatus');
     if (!statusDiv) return;
-    
+
     const status = this.api.getStatus();
     statusDiv.innerHTML = `
       <span class="status-indicator ${status.online ? 'online' : 'offline'}"></span>
       ${status.online ? 'En ligne' : 'Hors ligne'} - ${status.licencesCount} licence(s)
     `;
+  }
+
+  // Exporter les licences en CSV
+  exportCSV() {
+    if (!this.licences.length) {
+      this.showWarning('Aucune licence à exporter');
+      return;
+    }
+    const headers = [
+      'software_name',
+      'vendor',
+      'version',
+      'type',
+      'seats',
+      'purchase_date',
+      'expiration_date',
+      'initial_cost',
+      'assigned_to'
+    ];
+    const rows = this.licences.map(l => [
+      l.softwareName,
+      l.vendor,
+      l.version,
+      l.type,
+      l.seats,
+      l.purchaseDate,
+      l.expirationDate,
+      l.initialCost,
+      l.assignedTo || ''
+    ]);
+    const csv = [headers.join(','),
+      ...rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(','))
+    ].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'licences.csv';
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  // Importer des licences depuis un CSV
+  async importCSV(file) {
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const text = e.target.result;
+        const lines = text.trim().split(/\r?\n/);
+        if (lines.length <= 1) {
+          this.showWarning('Fichier CSV vide');
+          return;
+        }
+        const headers = lines[0].split(',').map(h => h.trim());
+        for (let i = 1; i < lines.length; i++) {
+          const values = lines[i].split(',');
+          const obj = {};
+          headers.forEach((h, idx) => {
+            obj[h] = values[idx] ? values[idx].replace(/^"|"$/g, '') : '';
+          });
+          const licence = {
+            softwareName: obj.software_name || obj.softwareName || '',
+            vendor: obj.vendor || '',
+            version: obj.version || '',
+            type: obj.type || 'perpetuelle',
+            seats: parseInt(obj.seats, 10) || 1,
+            purchaseDate: obj.purchase_date || '',
+            expirationDate: obj.expiration_date || '',
+            initialCost: parseFloat(obj.initial_cost) || 0,
+            assignedTo: obj.assigned_to || ''
+          };
+          if (licence.softwareName && licence.vendor && licence.version) {
+            await this.api.create(licence);
+          }
+        }
+        await this.loadLicences();
+        this.render();
+        this.showAlerts();
+        this.updateStatus();
+        this.showSuccess('Import CSV terminé');
+      } catch (err) {
+        console.error('Erreur import CSV:', err);
+        this.showError('Erreur lors de l\'import CSV');
+      }
+    };
+    reader.readAsText(file);
   }
 
   // Utilitaires d'affichage des messages
