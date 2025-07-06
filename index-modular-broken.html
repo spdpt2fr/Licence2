@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gestionnaire de Licences - Version Modulaire</title>
+    
+    <!-- Styles modulaires -->
+    <link rel="stylesheet" href="src/styles/base.css?v=20250706" />
+    <link rel="stylesheet" href="src/styles/components.css?v=20250706" />
+    <link rel="stylesheet" href="src/styles/layout.css?v=20250706" />
+    <link rel="stylesheet" href="src/styles/themes.css?v=20250706" />
+
+    <!-- Supabase CDN -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+
+    <!-- Configuration -->
+    <script src="config.js?v=20250706"></script>
+  </head>
+  <body>
+    <!-- Point d'entrée de l'application -->
+    <div id="app">
+      <div class="loading-screen">
+        <div class="loading-spinner"></div>
+        <p>Chargement de l'application...</p>
+      </div>
+    </div>
+
+    <!-- Application modulaire ES6 -->
+    <script type="module" src="src/main.js?v=20250706"></script>
+  </body>
+</html>
