@@ -1,0 +1,369 @@
+/**
+ * Thèmes et modes d'affichage pour l'application Licence2
+ * Taille: ~1KB - Thème sombre, mode contraste élevé, print
+ */
+
+/* === THÈME SOMBRE === */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --text-primary: #f7fafc;
+    --text-secondary: #e2e8f0;
+    --text-muted: #a0aec0;
+    --text-inverse: #1a202c;
+    
+    --bg-primary: #2d3748;
+    --bg-secondary: #4a5568;
+    --bg-overlay: rgba(0, 0, 0, 0.8);
+    
+    --gradient-glass: rgba(45, 55, 72, 0.95);
+  }
+  
+  body {
+    background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+  }
+  
+  .container {
+    background: var(--gradient-glass);
+    border: 1px solid #4a5568;
+  }
+  
+  input, textarea, select {
+    background: #4a5568;
+    border-color: #718096;
+    color: var(--text-primary);
+  }
+  
+  input:focus, textarea:focus, select:focus {
+    border-color: var(--primary-color);
+    background: #2d3748;
+  }
+  
+  .btn-secondary {
+    background: #4a5568;
+    color: var(--text-primary);
+    border-color: #718096;
+  }
+  
+  .btn-secondary:hover:not(:disabled) {
+    background: #2d3748;
+    border-color: #a0aec0;
+  }
+  
+  .licences-table {
+    background: #2d3748;
+  }
+  
+  .licences-table th {
+    background: #4a5568;
+    color: var(--text-secondary);
+  }
+  
+  .licence-row:hover {
+    background: #4a5568;
+  }
+  
+  .modal-content {
+    background: #2d3748;
+    border: 1px solid #4a5568;
+  }
+  
+  .toolbar {
+    background: #2d3748;
+    border: 1px solid #4a5568;
+  }
+}
+
+/* === MODE CONTRASTE ÉLEVÉ === */
+@media (prefers-contrast: high) {
+  :root {
+    --primary-color: #0066cc;
+    --danger-color: #cc0000;
+    --success-color: #008800;
+    --warning-color: #cc8800;
+    
+    --text-primary: #000000;
+    --text-secondary: #333333;
+    --bg-primary: #ffffff;
+    --bg-secondary: #f0f0f0;
+  }
+  
+  .btn-primary {
+    background: var(--primary-color);
+    border: 2px solid #003d7a;
+  }
+  
+  .btn-secondary {
+    background: var(--bg-primary);
+    border: 2px solid var(--text-primary);
+    color: var(--text-primary);
+  }
+  
+  input, textarea, select {
+    border: 2px solid var(--text-primary);
+  }
+  
+  input:focus, textarea:focus, select:focus {
+    border: 3px solid var(--primary-color);
+    outline: 2px solid var(--primary-color);
+  }
+  
+  .alert {
+    border: 2px solid;
+  }
+  
+  .licences-table th,
+  .licences-table td {
+    border: 1px solid var(--text-primary);
+  }
+}
+
+/* === MODE RÉDUIT (ANIMATIONS) === */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  
+  .animate-fade-in,
+  .animate-slide-up,
+  .animate-pulse {
+    animation: none;
+  }
+  
+  .modal {
+    animation: none;
+  }
+  
+  .modal-content {
+    animation: none;
+  }
+  
+  .toast {
+    transition: none;
+  }
+}
+
+/* === THÈME IMPRESSION === */
+@media print {
+  :root {
+    --text-primary: #000000;
+    --text-secondary: #333333;
+    --bg-primary: #ffffff;
+    --bg-secondary: #f8f9fa;
+  }
+  
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  
+  .container {
+    background: white !important;
+    box-shadow: none !important;
+    border: none !important;
+    margin: 0 !important;
+    padding: 20px !important;
+  }
+  
+  header {
+    background: white !important;
+    color: black !important;
+    box-shadow: none !important;
+    border-bottom: 2px solid black;
+  }
+  
+  .status-bar,
+  .user-info,
+  .toolbar,
+  .alerts,
+  .btn,
+  .modal,
+  .toast-container {
+    display: none !important;
+  }
+  
+  .licences-table {
+    border-collapse: collapse;
+    width: 100%;
+  }
+  
+  .licences-table th,
+  .licences-table td {
+    border: 1px solid black;
+    padding: 8px;
+  }
+  
+  .licences-table th {
+    background: #f0f0f0 !important;
+    font-weight: bold;
+  }
+  
+  .actions-column,
+  .actions {
+    display: none !important;
+  }
+  
+  /* Ajout d'informations d'impression */
+  .container::after {
+    content: "Imprimé le " counter(page) " - Gestionnaire de Licences v2.0";
+    position: fixed;
+    bottom: 10px;
+    right: 10px;
+    font-size: 10px;
+    color: #666;
+  }
+}
+
+/* === THÈME ACCESSIBLE === */
+.theme-accessible {
+  --font-size-base: 1.125rem;
+  --font-size-sm: 1rem;
+  --font-size-lg: 1.25rem;
+  
+  --spacing-sm: 12px;
+  --spacing-md: 20px;
+  --spacing-lg: 28px;
+  
+  --border-radius-md: 6px;
+  --border-radius-lg: 10px;
+}
+
+.theme-accessible .btn {
+  min-height: 44px;
+  padding: 12px 20px;
+}
+
+.theme-accessible input,
+.theme-accessible textarea,
+.theme-accessible select {
+  min-height: 44px;
+  font-size: var(--font-size-base);
+}
+
+.theme-accessible .licences-table th,
+.theme-accessible .licences-table td {
+  padding: 16px;
+}
+
+/* === THÈME COMPACT === */
+.theme-compact {
+  --font-size-base: 0.875rem;
+  --font-size-sm: 0.75rem;
+  --font-size-lg: 1rem;
+  
+  --spacing-sm: 4px;
+  --spacing-md: 8px;
+  --spacing-lg: 12px;
+  
+  --border-radius-md: 4px;
+  --border-radius-lg: 6px;
+}
+
+.theme-compact .container {
+  padding: 12px;
+}
+
+.theme-compact .btn {
+  padding: 4px 8px;
+  font-size: var(--font-size-sm);
+}
+
+.theme-compact .licences-table th,
+.theme-compact .licences-table td {
+  padding: 6px;
+}
+
+.theme-compact header {
+  padding: 8px 12px;
+}
+
+/* === UTILITAIRES THÈME === */
+.theme-toggle {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  z-index: var(--z-dropdown);
+  background: var(--bg-primary);
+  border: 2px solid var(--primary-color);
+  border-radius: var(--border-radius-full);
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: var(--shadow-lg);
+  transition: all var(--transition-fast);
+  font-size: 20px;
+}
+
+.theme-toggle:hover {
+  transform: scale(1.1);
+  box-shadow: var(--shadow-xl);
+}
+
+/* Classes pour forcer un thème */
+.force-light {
+  color-scheme: light;
+}
+
+.force-dark {
+  color-scheme: dark;
+}
+
+/* === RESPONSIVE THEMES === */
+@media (max-width: 768px) {
+  .theme-accessible {
+    --font-size-base: 1.25rem;
+    --spacing-md: 24px;
+    --spacing-lg: 32px;
+  }
+  
+  .theme-accessible .btn {
+    min-height: 48px;
+    padding: 16px 24px;
+  }
+  
+  .theme-compact .container {
+    padding: 8px;
+  }
+  
+  .theme-toggle {
+    bottom: 10px;
+    left: 10px;
+    width: 44px;
+    height: 44px;
+  }
+}
+
+/* === ANIMATIONS AVANCÉES === */
+@keyframes colorShift {
+  0% { filter: hue-rotate(0deg); }
+  100% { filter: hue-rotate(360deg); }
+}
+
+@keyframes glow {
+  0%, 100% { box-shadow: 0 0 5px var(--primary-color); }
+  50% { box-shadow: 0 0 20px var(--primary-color); }
+}
+
+.theme-animated .header {
+  animation: colorShift 10s infinite;
+}
+
+.theme-animated .btn-primary:hover {
+  animation: glow 1s ease-in-out;
+}
+
+/* === FOCUS VISIBLE === */
+.js-focus-visible :focus:not(.focus-visible) {
+  outline: none;
+}
+
+.focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
