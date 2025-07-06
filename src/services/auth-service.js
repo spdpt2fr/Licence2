@@ -1,275 +1,601 @@
-currentUser.must_change = false;
-    Helpers.cookie.set("session_user", btoa(JSON.stringify(this.currentUser)), 3);
+/**
+ * Service d'Authentification - Gestion des utilisateurs et sessions
+ * Taille: ~6KB - Responsabilité: authentification, sessions, permissions
+ */
+
+import { Helpers } from '../utils/helpers.js';
+
+export class AuthService {
+  constructor() {
+    this.supabase = null;
+    this.currentUser = null;
+    this.useOfflineMode = false;
+    this.sessionKey = 'session_user';
   }
 
   /**
-   * Récupérer un utilisateur par login
-   * @param {string} login - Nom d'utilisateur
-   * @returns {Object|null} - Données utilisateur
+   * Initialisation du service
    */
-  async getUser(login) {
-    if (this.useOfflineMode) {
-      const users = Helpers.storage.get("users", []);
-      return users.find((u) => u.login === login) || null;
+  async init() {
+    // Initialiser Supabase si disponible
+    if (typeof window !== 'undefined' && window.supabase && typeof APP_CONFIG !== 'undefined') {
+      this.supabase = window.supabase.createClient(APP_CONFIG.supabaseUrl, APP_CONFIG.supabaseKey);
+      console.log('✅ AuthService: Supabase initialisé');
+    } else {
+      this.useOfflineMode = true;
+      console.log('⚠️ AuthService: Mode hors ligne activé');
     }
 
+    // Vérifier session existante
+    await this.loadSession();
+  }
+
+  /**
+   * Charger la session depuis les cookies/localStorage
+   */
+  async loadSession() {
     try {
-      const { data, error } = await this.supabase
-        .from(APP_CONFIG.usersTable)
-        .select("*")
-        .eq("login", login)
-        .single();
-      if (error) return null;
-      return data;
-    } catch (err) {
-      console.error("Erreur récupération utilisateur:", err);
-      return null;
-    }
-  }
-
-  /**
-   * Créer un nouvel utilisateur
-   * @param {string} login - Nom d'utilisateur
-   * @param {string} password - Mot de passe
-   * @param {string} role - Rôle (read, write, admin)
-   * @returns {Object} - Utilisateur créé
-   */
-  async createUser(login, password, role) {
-    // Validation
-    const validation = Validators.validateUser({ login, password, role });
-    if (!validation.isValid) {
-      throw new Error(validation.errors.join(", "));
-    }
-
-    if (this.useOfflineMode) {
-      const users = Helpers.storage.get("users", []);
-      
-      // Vérifier si l'utilisateur existe déjà
-      if (users.find(u => u.login === login)) {
-        throw new Error("Un utilisateur avec ce login existe déjà");
+      const sessionData = Helpers.cookie.get(this.sessionKey);
+      if (sessionData) {
+        this.currentUser = JSON.parse(atob(sessionData));
+        console.log('👤 Session restaurée:', this.currentUser.login);
+        return true;
       }
-      
-      const user = {
-        login,
-        password: btoa(password),
-        role,
-        must_change: false,
-      };
-      users.push(user);
-      Helpers.storage.set("users", users);
-      return user;
+    } catch (error) {
+      console.warn('Erreur chargement session:', error);
+      this.clearSession();
     }
-
-    try {
-      const { data, error } = await this.supabase
-        .from(APP_CONFIG.usersTable)
-        .insert([{ login, password: btoa(password), role, must_change: false }])
-        .select();
-      if (error) throw error;
-      return data[0];
-    } catch (err) {
-      if (err.code === '23505') { // Violation contrainte unique
-        throw new Error("Un utilisateur avec ce login existe déjà");
-      }
-      throw err;
-    }
-  }
-
-  /**
-   * Mettre à jour un utilisateur
-   * @param {string} login - Nom d'utilisateur
-   * @param {Object} updates - Données à mettre à jour
-   * @returns {Object} - Utilisateur mis à jour
-   */
-  async updateUser(login, updates) {
-    if (this.useOfflineMode) {
-      const users = Helpers.storage.get("users", []);
-      const idx = users.findIndex((u) => u.login === login);
-      if (idx !== -1) {
-        users[idx] = { ...users[idx], ...updates };
-        Helpers.storage.set("users", users);
-        return users[idx];
-      }
-      return null;
-    }
-
-    try {
-      const { data, error } = await this.supabase
-        .from(APP_CONFIG.usersTable)
-        .update(updates)
-        .eq("login", login)
-        .select();
-      if (error) throw error;
-      return data[0];
-    } catch (err) {
-      console.error("Erreur mise à jour utilisateur:", err);
-      throw err;
-    }
-  }
-
-  /**
-   * Vérifier les permissions d'un utilisateur
-   * @param {string} permission - Permission à vérifier
-   * @param {Object} user - Utilisateur (optionnel, utilise currentUser par défaut)
-   * @returns {boolean}
-   */
-  hasPermission(permission, user = null) {
-    const checkUser = user || this.currentUser;
-    if (!checkUser) return false;
-    
-    switch (permission) {
-      case 'read':
-        return ['read', 'write', 'admin'].includes(checkUser.role);
-      case 'write':
-        return ['write', 'admin'].includes(checkUser.role);
-      case 'admin':
-        return checkUser.role === 'admin';
-      case 'create_user':
-        return checkUser.role === 'admin';
-      case 'delete_user':
-        return checkUser.role === 'admin';
-      case 'manage_licences':
-        return ['write', 'admin'].includes(checkUser.role);
-      default:
-        return false;
-    }
-  }
-
-  /**
-   * Obtenir le nom d'affichage du rôle
-   * @param {string} role - Rôle (optionnel, utilise currentUser par défaut)
-   * @returns {string}
-   */
-  getRoleDisplayName(role = null) {
-    const userRole = role || this.currentUser?.role;
-    return Formatters.formatRole(userRole);
+    return false;
   }
 
   /**
    * Vérifier si l'utilisateur est connecté
-   * @returns {boolean}
    */
-  isAuthenticated() {
-    return !!this.currentUser;
+  async checkSession() {
+    return this.currentUser !== null;
   }
 
   /**
-   * Vérifier si l'utilisateur doit changer son mot de passe
-   * @returns {boolean}
+   * Connexion utilisateur
    */
-  mustChangePassword() {
-    return this.currentUser?.must_change || false;
+  async login(login, password) {
+    try {
+      if (this.useOfflineMode) {
+        return await this.loginOffline(login, password);
+      }
+
+      // Authentification via Supabase
+      const { data, error } = await this.supabase
+        .from(APP_CONFIG.usersTable)
+        .select('*')
+        .eq('login', login)
+        .eq('password', password)
+        .single();
+
+      if (error || !data) {
+        return {
+          success: false,
+          message: 'Identifiants incorrects'
+        };
+      }
+
+      this.currentUser = data;
+      this.saveSession();
+
+      return {
+        success: true,
+        message: 'Connexion réussie',
+        user: this.currentUser
+      };
+
+    } catch (error) {
+      console.error('Erreur login:', error);
+      return {
+        success: false,
+        message: 'Erreur lors de la connexion'
+      };
+    }
   }
 
   /**
-   * Obtenir les informations de l'utilisateur connecté
-   * @returns {Object|null}
+   * Connexion en mode hors ligne
+   */
+  async loginOffline(login, password) {
+    const users = Helpers.storage.get('users', []);
+    const user = users.find(u => u.login === login && u.password === password);
+
+    if (!user) {
+      // Créer un utilisateur admin par défaut
+      if (login === 'admin' && password === 'admin') {
+        const defaultUser = {
+          id: 1,
+          login: 'admin',
+          password: 'admin',
+          role: 'admin',
+          nom: 'Administrateur',
+          email: 'admin@licence.local',
+          created_at: new Date().toISOString(),
+          must_change: true
+        };
+        
+        users.push(defaultUser);
+        Helpers.storage.set('users', users);
+        this.currentUser = defaultUser;
+        this.saveSession();
+
+        return {
+          success: true,
+          message: 'Connexion admin par défaut',
+          user: this.currentUser
+        };
+      }
+
+      return {
+        success: false,
+        message: 'Identifiants incorrects'
+      };
+    }
+
+    this.currentUser = user;
+    this.saveSession();
+
+    return {
+      success: true,
+      message: 'Connexion réussie (mode hors ligne)',
+      user: this.currentUser
+    };
+  }
+
+  /**
+   * Inscription d'un nouvel utilisateur
+   */
+  async register(userData) {
+    try {
+      if (this.useOfflineMode) {
+        return await this.registerOffline(userData);
+      }
+
+      // Vérifier si l'utilisateur existe déjà
+      const existing = await this.getUser(userData.login);
+      if (existing) {
+        return {
+          success: false,
+          message: 'Ce nom d\'utilisateur existe déjà'
+        };
+      }
+
+      // Créer l'utilisateur via Supabase
+      const { data, error } = await this.supabase
+        .from(APP_CONFIG.usersTable)
+        .insert([{
+          login: userData.login,
+          password: userData.password,
+          nom: userData.name,
+          email: userData.email,
+          role: 'user',
+          created_at: new Date().toISOString()
+        }])
+        .select()
+        .single();
+
+      if (error) {
+        return {
+          success: false,
+          message: 'Erreur lors de la création du compte'
+        };
+      }
+
+      return {
+        success: true,
+        message: 'Compte créé avec succès',
+        user: data
+      };
+
+    } catch (error) {
+      console.error('Erreur register:', error);
+      return {
+        success: false,
+        message: 'Erreur lors de la création du compte'
+      };
+    }
+  }
+
+  /**
+   * Inscription en mode hors ligne
+   */
+  async registerOffline(userData) {
+    const users = Helpers.storage.get('users', []);
+    
+    // Vérifier si l'utilisateur existe
+    if (users.find(u => u.login === userData.login)) {
+      return {
+        success: false,
+        message: 'Ce nom d\'utilisateur existe déjà'
+      };
+    }
+
+    const newUser = {
+      id: users.length + 1,
+      login: userData.login,
+      password: userData.password,
+      nom: userData.name,
+      email: userData.email,
+      role: 'user',
+      created_at: new Date().toISOString()
+    };
+
+    users.push(newUser);
+    Helpers.storage.set('users', users);
+
+    return {
+      success: true,
+      message: 'Compte créé avec succès (mode hors ligne)',
+      user: newUser
+    };
+  }
+
+  /**
+   * Changement de mot de passe
+   */
+  async changePassword(currentPassword, newPassword) {
+    if (!this.currentUser) {
+      return {
+        success: false,
+        message: 'Vous devez être connecté'
+      };
+    }
+
+    try {
+      if (this.useOfflineMode) {
+        return await this.changePasswordOffline(currentPassword, newPassword);
+      }
+
+      // Vérifier le mot de passe actuel
+      if (this.currentUser.password !== currentPassword) {
+        return {
+          success: false,
+          message: 'Mot de passe actuel incorrect'
+        };
+      }
+
+      // Mettre à jour via Supabase
+      const { error } = await this.supabase
+        .from(APP_CONFIG.usersTable)
+        .update({ 
+          password: newPassword,
+          must_change: false 
+        })
+        .eq('id', this.currentUser.id);
+
+      if (error) {
+        return {
+          success: false,
+          message: 'Erreur lors du changement de mot de passe'
+        };
+      }
+
+      this.currentUser.password = newPassword;
+      this.currentUser.must_change = false;
+      this.saveSession();
+
+      return {
+        success: true,
+        message: 'Mot de passe modifié avec succès'
+      };
+
+    } catch (error) {
+      console.error('Erreur changePassword:', error);
+      return {
+        success: false,
+        message: 'Erreur lors du changement de mot de passe'
+      };
+    }
+  }
+
+  /**
+   * Changement de mot de passe hors ligne
+   */
+  async changePasswordOffline(currentPassword, newPassword) {
+    const users = Helpers.storage.get('users', []);
+    const userIndex = users.findIndex(u => u.id === this.currentUser.id);
+
+    if (userIndex === -1 || users[userIndex].password !== currentPassword) {
+      return {
+        success: false,
+        message: 'Mot de passe actuel incorrect'
+      };
+    }
+
+    users[userIndex].password = newPassword;
+    users[userIndex].must_change = false;
+    Helpers.storage.set('users', users);
+
+    this.currentUser.password = newPassword;
+    this.currentUser.must_change = false;
+    this.saveSession();
+
+    return {
+      success: true,
+      message: 'Mot de passe modifié avec succès'
+    };
+  }
+
+  /**
+   * Déconnexion
+   */
+  async logout() {
+    this.currentUser = null;
+    this.clearSession();
+    console.log('👋 Utilisateur déconnecté');
+  }
+
+  /**
+   * Sauvegarder la session
+   */
+  saveSession() {
+    if (this.currentUser) {
+      Helpers.cookie.set(this.sessionKey, btoa(JSON.stringify(this.currentUser)), 7);
+    }
+  }
+
+  /**
+   * Supprimer la session
+   */
+  clearSession() {
+    Helpers.cookie.delete(this.sessionKey);
+    this.currentUser = null;
+  }
+
+  /**
+   * Obtenir l'utilisateur actuel
    */
   getCurrentUser() {
     return this.currentUser;
   }
 
   /**
-   * Lister tous les utilisateurs (admin seulement)
-   * @returns {Array} - Liste des utilisateurs
+   * Vérifier si l'utilisateur a une permission
    */
-  async listUsers() {
-    if (!this.hasPermission('admin')) {
-      throw new Error("Permission insuffisante");
-    }
+  hasPermission(permission) {
+    if (!this.currentUser) return false;
 
+    const permissions = {
+      admin: ['view_licences', 'manage_licences', 'delete_licences', 'create_user', 'manage_users', 'export_data'],
+      user: ['view_licences', 'manage_licences', 'export_data'],
+      readonly: ['view_licences']
+    };
+
+    const userPermissions = permissions[this.currentUser.role] || [];
+    return userPermissions.includes(permission);
+  }
+
+  /**
+   * Obtenir le nom d'affichage du rôle
+   */
+  getRoleDisplayName(role = null) {
+    const targetRole = role || this.currentUser?.role;
+    const roleNames = {
+      admin: 'Administrateur',
+      user: 'Utilisateur',
+      readonly: 'Lecture seule'
+    };
+    return roleNames[targetRole] || 'Inconnu';
+  }
+
+  /**
+   * Récupérer un utilisateur par login
+   */
+  async getUser(login) {
     if (this.useOfflineMode) {
-      const users = Helpers.storage.get("users", []);
-      // Ne pas retourner les mots de passe
-      return users.map(u => ({
-        login: u.login,
-        role: u.role,
-        must_change: u.must_change
-      }));
+      const users = Helpers.storage.get('users', []);
+      return users.find(u => u.login === login) || null;
     }
 
     try {
       const { data, error } = await this.supabase
         .from(APP_CONFIG.usersTable)
-        .select("login, role, must_change")
-        .order("login");
-      
+        .select('*')
+        .eq('login', login)
+        .single();
+
+      return error ? null : data;
+    } catch (error) {
+      console.error('Erreur getUser:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Lister tous les utilisateurs (admin seulement)
+   */
+  async getAllUsers() {
+    if (!this.hasPermission('manage_users')) {
+      throw new Error('Permission insuffisante');
+    }
+
+    if (this.useOfflineMode) {
+      return Helpers.storage.get('users', []);
+    }
+
+    try {
+      const { data, error } = await this.supabase
+        .from(APP_CONFIG.usersTable)
+        .select('*')
+        .order('created_at', { ascending: false });
+
       if (error) throw error;
       return data;
-    } catch (err) {
-      console.error("Erreur listage utilisateurs:", err);
-      throw err;
+    } catch (error) {
+      console.error('Erreur getAllUsers:', error);
+      throw error;
     }
+  }
+
+  /**
+   * Créer un nouvel utilisateur (admin seulement)
+   */
+  async createUser(userData) {
+    if (!this.hasPermission('create_user')) {
+      return {
+        success: false,
+        message: 'Permission insuffisante'
+      };
+    }
+
+    try {
+      if (this.useOfflineMode) {
+        return await this.createUserOffline(userData);
+      }
+
+      // Vérifier si l'utilisateur existe
+      const existing = await this.getUser(userData.login);
+      if (existing) {
+        return {
+          success: false,
+          message: 'Ce nom d\'utilisateur existe déjà'
+        };
+      }
+
+      const { data, error } = await this.supabase
+        .from(APP_CONFIG.usersTable)
+        .insert([{
+          login: userData.login,
+          password: userData.password,
+          nom: userData.nom,
+          email: userData.email,
+          role: userData.role || 'user',
+          created_at: new Date().toISOString(),
+          must_change: true
+        }])
+        .select()
+        .single();
+
+      if (error) {
+        return {
+          success: false,
+          message: 'Erreur lors de la création'
+        };
+      }
+
+      return {
+        success: true,
+        message: 'Utilisateur créé avec succès',
+        user: data
+      };
+
+    } catch (error) {
+      console.error('Erreur createUser:', error);
+      return {
+        success: false,
+        message: 'Erreur lors de la création'
+      };
+    }
+  }
+
+  /**
+   * Créer un utilisateur en mode hors ligne
+   */
+  async createUserOffline(userData) {
+    const users = Helpers.storage.get('users', []);
+    
+    if (users.find(u => u.login === userData.login)) {
+      return {
+        success: false,
+        message: 'Ce nom d\'utilisateur existe déjà'
+      };
+    }
+
+    const newUser = {
+      id: Math.max(...users.map(u => u.id), 0) + 1,
+      login: userData.login,
+      password: userData.password,
+      nom: userData.nom,
+      email: userData.email,
+      role: userData.role || 'user',
+      created_at: new Date().toISOString(),
+      must_change: true
+    };
+
+    users.push(newUser);
+    Helpers.storage.set('users', users);
+
+    return {
+      success: true,
+      message: 'Utilisateur créé avec succès (hors ligne)',
+      user: newUser
+    };
   }
 
   /**
    * Supprimer un utilisateur (admin seulement)
-   * @param {string} login - Nom d'utilisateur à supprimer
-   * @returns {boolean} - Succès de l'opération
    */
-  async deleteUser(login) {
-    if (!this.hasPermission('admin')) {
-      throw new Error("Permission insuffisante");
+  async deleteUser(userId) {
+    if (!this.hasPermission('manage_users')) {
+      return {
+        success: false,
+        message: 'Permission insuffisante'
+      };
     }
 
-    if (login === 'Admin') {
-      throw new Error("Impossible de supprimer l'utilisateur Admin");
-    }
-
-    if (this.useOfflineMode) {
-      const users = Helpers.storage.get("users", []);
-      const filteredUsers = users.filter(u => u.login !== login);
-      
-      if (filteredUsers.length === users.length) {
-        throw new Error("Utilisateur non trouvé");
-      }
-      
-      Helpers.storage.set("users", filteredUsers);
-      return true;
+    if (userId === this.currentUser?.id) {
+      return {
+        success: false,
+        message: 'Impossible de supprimer votre propre compte'
+      };
     }
 
     try {
+      if (this.useOfflineMode) {
+        return await this.deleteUserOffline(userId);
+      }
+
       const { error } = await this.supabase
         .from(APP_CONFIG.usersTable)
         .delete()
-        .eq("login", login);
-      
-      if (error) throw error;
-      return true;
-    } catch (err) {
-      console.error("Erreur suppression utilisateur:", err);
-      throw err;
+        .eq('id', userId);
+
+      if (error) {
+        return {
+          success: false,
+          message: 'Erreur lors de la suppression'
+        };
+      }
+
+      return {
+        success: true,
+        message: 'Utilisateur supprimé'
+      };
+
+    } catch (error) {
+      console.error('Erreur deleteUser:', error);
+      return {
+        success: false,
+        message: 'Erreur lors de la suppression'
+      };
     }
   }
 
   /**
-   * Obtenir les statistiques des utilisateurs
-   * @returns {Object} - Statistiques
+   * Supprimer un utilisateur hors ligne
    */
-  async getUserStats() {
-    if (!this.hasPermission('admin')) {
-      throw new Error("Permission insuffisante");
+  async deleteUserOffline(userId) {
+    const users = Helpers.storage.get('users', []);
+    const filteredUsers = users.filter(u => u.id !== userId);
+    
+    if (filteredUsers.length === users.length) {
+      return {
+        success: false,
+        message: 'Utilisateur non trouvé'
+      };
     }
 
-    try {
-      const users = await this.listUsers();
-      const stats = {
-        total: users.length,
-        byRole: {
-          admin: users.filter(u => u.role === 'admin').length,
-          write: users.filter(u => u.role === 'write').length,
-          read: users.filter(u => u.role === 'read').length
-        },
-        mustChange: users.filter(u => u.must_change).length
-      };
-      
-      return stats;
-    } catch (err) {
-      console.error("Erreur stats utilisateurs:", err);
-      throw err;
-    }
+    Helpers.storage.set('users', filteredUsers);
+
+    return {
+      success: true,
+      message: 'Utilisateur supprimé (hors ligne)'
+    };
   }
 }
 
-// Export global pour compatibilité navigateur
-window.AuthService = AuthService;
+export default AuthService;
