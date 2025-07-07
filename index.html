@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Gestionnaire de Licences - Test</title>
+    <title>Gestionnaire de Licences - Fixed v2</title>
     <style>
       /* CSS inline pour tests rapides */
       * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -34,7 +34,7 @@
       .status-active { color: #28a745; font-weight: bold; }
       .status-expired { color: #dc3545; font-weight: bold; }
       .status-suspended { color: #ffc107; font-weight: bold; }
-      .hidden { display: none; }
+      .hidden { display: none !important; }
       .toast { position: fixed; top: 20px; right: 20px; padding: 15px 20px; border-radius: 5px; color: white; z-index: 1000; }
       .toast-success { background: #28a745; }
       .toast-error { background: #dc3545; }
@@ -48,12 +48,6 @@
       .btn-danger { background: #dc3545; color: white; }
       .btn-danger:hover { background: #c82333; }
     </style>
-    
-    <!-- Supabase CDN -->
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-    
-    <!-- Configuration -->
-    <script src="config.js"></script>
   </head>
   <body>
     <!-- Page de connexion -->
@@ -120,12 +114,12 @@
       </main>
     </div>
 
-    <!-- Modal Nouvelle Licence -->
-    <div id="licenceModal" class="modal hidden">
+    <!-- Modal Nouvelle Licence - FERMÉE PAR DÉFAUT -->
+    <div id="licenceModal" class="modal hidden" style="display: none;">
       <div class="modal-content">
         <div class="modal-header">
           <h3>Nouvelle licence</h3>
-          <button class="modal-close" onclick="closeLicenceModal()">&times;</button>
+          <button class="modal-close" type="button">&times;</button>
         </div>
         
         <form id="licenceForm">
@@ -188,7 +182,7 @@
           </div>
           
           <div style="margin-top: 30px; text-align: right;">
-            <button type="button" class="btn btn-secondary" onclick="closeLicenceModal()">Annuler</button>
+            <button type="button" class="btn btn-secondary" id="cancelBtn">Annuler</button>
             <button type="submit" class="btn btn-primary" style="margin-left: 10px;">Créer</button>
           </div>
         </form>
@@ -196,421 +190,387 @@
     </div>
 
     <script>
-      // Variables globales
-      let currentUser = null;
-      let licences = [];
-      let supabase = null;
-      let useOfflineMode = false;
-      let isModalOpen = false; // 🐛 FIX: Variable pour traquer l'état de la modal
+      console.log('🚀 LICENCE APP v2 - FIXED VERSION');
+      
+      // Variables globales ISOLÉES
+      const AppState = {
+        currentUser: null,
+        licences: [],
+        isModalOpen: false,
+        useOfflineMode: true
+      };
 
-      // Initialisation
-      document.addEventListener('DOMContentLoaded', async function() {
-        console.log('🚀 Initialisation app test');
-        
-        // Initialiser Supabase
-        if (typeof APP_CONFIG !== 'undefined' && window.supabase) {
+      // Utilitaires sécurisés
+      const Utils = {
+        generateId() {
+          return 'lic_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        },
+
+        generateLicenceNumber() {
+          const year = new Date().getFullYear();
+          const num = Math.floor(Math.random() * 9999) + 1;
+          return `${year}${num.toString().padStart(4, '0')}`;
+        },
+
+        formatStatut(statut) {
+          const statuts = {
+            active: 'Active',
+            suspendue: 'Suspendue',
+            expiree: 'Expirée',
+            annulee: 'Annulée'
+          };
+          return statuts[statut] || statut;
+        },
+
+        formatDate(dateStr) {
+          if (!dateStr) return '';
+          const date = new Date(dateStr);
+          return date.toLocaleDateString('fr-FR');
+        },
+
+        showToast(message, type = 'success') {
+          const toast = document.createElement('div');
+          toast.className = `toast toast-${type}`;
+          toast.textContent = message;
+          document.body.appendChild(toast);
+          
+          setTimeout(() => {
+            if (toast.parentNode) {
+              toast.parentNode.removeChild(toast);
+            }
+          }, 3000);
+        },
+
+        setCookie(name, value, days) {
+          const expires = new Date(Date.now() + days * 864e5).toUTCString();
+          document.cookie = `${name}=${value}; expires=${expires}; path=/`;
+        },
+
+        getCookie(name) {
+          return document.cookie.split('; ').reduce((r, v) => {
+            const parts = v.split('=');
+            return parts[0] === name ? decodeURIComponent(parts[1]) : r;
+          }, '');
+        },
+
+        deleteCookie(name) {
+          document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
+        },
+
+        saveToStorage(key, data) {
           try {
-            supabase = window.supabase.createClient(APP_CONFIG.supabaseUrl, APP_CONFIG.supabaseKey);
-            console.log('✅ Supabase initialisé');
+            localStorage.setItem(key, JSON.stringify(data));
           } catch (error) {
-            console.warn('⚠️ Supabase non disponible, mode offline');
-            useOfflineMode = true;
+            console.warn('Erreur localStorage:', error);
           }
-        } else {
-          useOfflineMode = true;
-          console.log('⚠️ Mode offline activé');
+        },
+
+        getFromStorage(key, defaultValue = null) {
+          try {
+            const data = localStorage.getItem(key);
+            return data ? JSON.parse(data) : defaultValue;
+          } catch (error) {
+            console.warn('Erreur localStorage:', error);
+            return defaultValue;
+          }
         }
+      };
 
-        // Vérifier session existante
-        const sessionData = getCookie('session_user');
-        if (sessionData) {
-          try {
-            currentUser = JSON.parse(atob(sessionData));
-            showAppPage();
-            await loadLicences();
-          } catch (error) {
-            console.warn('Session corrompue');
-            deleteCookie('session_user');
+      // Gestion des modals SIMPLIFIÉE
+      const ModalManager = {
+        open() {
+          if (AppState.isModalOpen) {
+            console.log('Modal déjà ouverte');
+            return;
           }
+
+          console.log('🔵 Ouverture modal');
+          AppState.isModalOpen = true;
+          
+          const modal = document.getElementById('licenceModal');
+          if (modal) {
+            modal.classList.remove('hidden');
+            modal.style.display = 'flex';
+          }
+
+          // Valeurs par défaut
+          this.setDefaultValues();
+          
+          // Focus
+          setTimeout(() => {
+            const nomField = document.getElementById('nom');
+            if (nomField) nomField.focus();
+          }, 100);
+        },
+
+        close() {
+          if (!AppState.isModalOpen) {
+            return;
+          }
+
+          console.log('🔴 Fermeture modal');
+          AppState.isModalOpen = false;
+          
+          const modal = document.getElementById('licenceModal');
+          if (modal) {
+            modal.classList.add('hidden');
+            modal.style.display = 'none';
+          }
+
+          // Reset formulaire
+          const form = document.getElementById('licenceForm');
+          if (form) {
+            form.reset();
+          }
+        },
+
+        setDefaultValues() {
+          const today = new Date().toISOString().split('T')[0];
+          const nextYear = new Date();
+          nextYear.setFullYear(nextYear.getFullYear() + 1);
+          
+          const dateEmission = document.getElementById('dateEmission');
+          if (dateEmission) dateEmission.value = today;
+          
+          const dateExpiration = document.getElementById('dateExpiration');
+          if (dateExpiration) dateExpiration.value = nextYear.toISOString().split('T')[0];
+          
+          const statut = document.getElementById('statut');
+          if (statut) statut.value = 'active';
+          
+          const categorie = document.getElementById('categorie');
+          if (categorie) categorie.value = 'senior';
+        }
+      };
+
+      // Gestion des licences
+      const LicenceManager = {
+        load() {
+          AppState.licences = Utils.getFromStorage('licences', []);
+          this.render();
+        },
+
+        render() {
+          const tbody = document.getElementById('licencesTableBody');
+          const totalCount = document.getElementById('totalCount');
+          
+          if (totalCount) {
+            totalCount.textContent = AppState.licences.length;
+          }
+          
+          if (!tbody) return;
+          
+          if (AppState.licences.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: #666;">Aucune licence trouvée</td></tr>';
+            return;
+          }
+          
+          tbody.innerHTML = AppState.licences.map(licence => `
+            <tr>
+              <td>${licence.nom || ''}</td>
+              <td>${licence.prenom || ''}</td>
+              <td><code>${licence.numeroLicence || 'N/A'}</code></td>
+              <td><span class="status-${licence.statut}">${Utils.formatStatut(licence.statut)}</span></td>
+              <td>${licence.categorie || ''}</td>
+              <td>${licence.dateExpiration ? Utils.formatDate(licence.dateExpiration) : 'N/A'}</td>
+              <td>
+                <button class="btn btn-sm btn-danger" onclick="LicenceManager.delete('${licence.id}')">
+                  🗑️ Supprimer
+                </button>
+              </td>
+            </tr>
+          `).join('');
+        },
+
+        add(licenceData) {
+          licenceData.id = Utils.generateId();
+          if (!licenceData.numeroLicence) {
+            licenceData.numeroLicence = Utils.generateLicenceNumber();
+          }
+          
+          AppState.licences.push(licenceData);
+          Utils.saveToStorage('licences', AppState.licences);
+          this.render();
+          Utils.showToast('Licence créée avec succès', 'success');
+        },
+
+        delete(licenceId) {
+          if (!confirm('Êtes-vous sûr de vouloir supprimer cette licence ?')) {
+            return;
+          }
+          
+          AppState.licences = AppState.licences.filter(l => l.id !== licenceId);
+          Utils.saveToStorage('licences', AppState.licences);
+          this.render();
+          Utils.showToast('Licence supprimée', 'success');
+        }
+      };
+
+      // Gestion de l'authentification
+      const AuthManager = {
+        login(login, password) {
+          if (login === 'admin' && password === 'admin') {
+            const user = {
+              id: 1,
+              login: 'admin',
+              nom: 'Administrateur',
+              role: 'admin'
+            };
+            
+            AppState.currentUser = user;
+            Utils.setCookie('session_user', btoa(JSON.stringify(user)), 7);
+            Utils.showToast('Connexion réussie', 'success');
+            this.showAppPage();
+            LicenceManager.load();
+            return true;
+          } else {
+            Utils.showToast('Identifiants incorrects', 'error');
+            return false;
+          }
+        },
+
+        logout() {
+          AppState.currentUser = null;
+          Utils.deleteCookie('session_user');
+          ModalManager.close(); // Fermer modal si ouverte
+          this.showLoginPage();
+          Utils.showToast('Déconnexion réussie', 'success');
+        },
+
+        showLoginPage() {
+          document.getElementById('loginPage').classList.remove('hidden');
+          document.getElementById('appPage').classList.add('hidden');
+        },
+
+        showAppPage() {
+          document.getElementById('loginPage').classList.add('hidden');
+          document.getElementById('appPage').classList.remove('hidden');
+          
+          if (AppState.currentUser) {
+            const userDisplay = document.getElementById('userDisplay');
+            if (userDisplay) {
+              userDisplay.textContent = AppState.currentUser.nom || AppState.currentUser.login;
+            }
+          }
+        },
+
+        checkSession() {
+          const sessionData = Utils.getCookie('session_user');
+          if (sessionData) {
+            try {
+              AppState.currentUser = JSON.parse(atob(sessionData));
+              this.showAppPage();
+              LicenceManager.load();
+            } catch (error) {
+              console.warn('Session corrompue');
+              Utils.deleteCookie('session_user');
+            }
+          }
+        }
+      };
+
+      // Initialisation SÉCURISÉE
+      document.addEventListener('DOMContentLoaded', function() {
+        console.log('🚀 Initialisation app - Version Fixed');
+        
+        // S'assurer que la modal est fermée
+        const modal = document.getElementById('licenceModal');
+        if (modal) {
+          modal.classList.add('hidden');
+          modal.style.display = 'none';
+          AppState.isModalOpen = false;
+          console.log('🔒 Modal forcée fermée au démarrage');
         }
 
         // Événements
-        setupEventListeners();
+        const loginForm = document.getElementById('loginForm');
+        if (loginForm) {
+          loginForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const login = document.getElementById('login').value;
+            const password = document.getElementById('password').value;
+            AuthManager.login(login, password);
+          });
+        }
+
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) {
+          logoutBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            AuthManager.logout();
+          });
+        }
+
+        const addLicenceBtn = document.getElementById('addLicenceBtn');
+        if (addLicenceBtn) {
+          addLicenceBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            ModalManager.open();
+          });
+        }
+
+        const modalCloseBtn = document.querySelector('.modal-close');
+        if (modalCloseBtn) {
+          modalCloseBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            ModalManager.close();
+          });
+        }
+
+        const cancelBtn = document.getElementById('cancelBtn');
+        if (cancelBtn) {
+          cancelBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            ModalManager.close();
+          });
+        }
+
+        const licenceForm = document.getElementById('licenceForm');
+        if (licenceForm) {
+          licenceForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            if (!AppState.isModalOpen) {
+              console.warn('Tentative de soumission avec modal fermée');
+              return;
+            }
+            
+            const formData = new FormData(e.target);
+            const licenceData = Object.fromEntries(formData.entries());
+            
+            LicenceManager.add(licenceData);
+            ModalManager.close();
+          });
+        }
+
+        // Fermer modal en cliquant à l'extérieur
+        if (modal) {
+          modal.addEventListener('click', function(e) {
+            if (e.target === modal && AppState.isModalOpen) {
+              ModalManager.close();
+            }
+          });
+        }
+
+        // Fermer modal avec Echap
+        document.addEventListener('keydown', function(e) {
+          if (e.key === 'Escape' && AppState.isModalOpen) {
+            ModalManager.close();
+          }
+        });
+
+        // Vérifier session
+        AuthManager.checkSession();
         
-        // 🐛 FIX: Ajouter listener pour fermer modal en cliquant à l'extérieur
-        setupModalEvents();
+        console.log('✅ App initialisée avec succès');
       });
 
-      // 🐛 FIX: Configuration des événements de la modal
-      function setupModalEvents() {
-        const modal = document.getElementById('licenceModal');
-        
-        // Fermer en cliquant à l'extérieur de la modal
-        modal.addEventListener('click', function(event) {
-          if (event.target === modal && isModalOpen) {
-            closeLicenceModal();
-          }
-        });
-        
-        // Fermer avec la touche Echap
-        document.addEventListener('keydown', function(event) {
-          if (event.key === 'Escape' && isModalOpen) {
-            closeLicenceModal();
-          }
-        });
-      }
-
-      // Configuration des événements
-      function setupEventListeners() {
-        // Connexion
-        document.getElementById('loginForm').addEventListener('submit', handleLogin);
-        
-        // Déconnexion
-        document.getElementById('logoutBtn').addEventListener('click', handleLogout);
-        
-        // Nouvelle licence
-        document.getElementById('addLicenceBtn').addEventListener('click', openLicenceModal);
-        
-        // Soumission licence
-        document.getElementById('licenceForm').addEventListener('submit', handleLicenceSubmit);
-      }
-
-      // Gestion de la connexion
-      async function handleLogin(event) {
-        event.preventDefault();
-        
-        const login = document.getElementById('login').value;
-        const password = document.getElementById('password').value;
-        
-        try {
-          let user = null;
-          
-          if (useOfflineMode) {
-            // Mode offline - utilisateur admin par défaut
-            if (login === 'admin' && password === 'admin') {
-              user = {
-                id: 1,
-                login: 'admin',
-                nom: 'Administrateur',
-                role: 'admin'
-              };
-            }
-          } else {
-            // Mode online - Supabase
-            const { data, error } = await supabase
-              .from(APP_CONFIG.usersTable)
-              .select('*')
-              .eq('login', login)
-              .eq('password', password)
-              .single();
-              
-            if (!error && data) {
-              user = data;
-            }
-          }
-          
-          if (user) {
-            currentUser = user;
-            setCookie('session_user', btoa(JSON.stringify(user)), 7);
-            showToast('Connexion réussie', 'success');
-            showAppPage();
-            await loadLicences();
-          } else {
-            showToast('Identifiants incorrects', 'error');
-          }
-          
-        } catch (error) {
-          console.error('Erreur connexion:', error);
-          showToast('Erreur de connexion', 'error');
-        }
-      }
-
-      // Gestion de la déconnexion
-      function handleLogout() {
-        currentUser = null;
-        deleteCookie('session_user');
-        // 🐛 FIX: Fermer la modal si ouverte lors de la déconnexion
-        if (isModalOpen) {
-          closeLicenceModal();
-        }
-        showLoginPage();
-        showToast('Déconnexion réussie', 'success');
-      }
-
-      // Afficher la page de connexion
-      function showLoginPage() {
-        document.getElementById('loginPage').classList.remove('hidden');
-        document.getElementById('appPage').classList.add('hidden');
-      }
-
-      // Afficher l'application
-      function showAppPage() {
-        document.getElementById('loginPage').classList.add('hidden');
-        document.getElementById('appPage').classList.remove('hidden');
-        
-        if (currentUser) {
-          document.getElementById('userDisplay').textContent = currentUser.nom || currentUser.login;
-        }
-      }
-
-      // Charger les licences
-      async function loadLicences() {
-        try {
-          if (useOfflineMode) {
-            licences = getFromStorage('licences', []);
-          } else {
-            const { data, error } = await supabase
-              .from(APP_CONFIG.licencesTable)
-              .select('*')
-              .order('nom', { ascending: true });
-              
-            if (error) throw error;
-            licences = data || [];
-          }
-          
-          renderLicences();
-          
-        } catch (error) {
-          console.error('Erreur chargement licences:', error);
-          showToast('Erreur chargement des licences', 'error');
-        }
-      }
-
-      // Afficher les licences
-      function renderLicences() {
-        const tbody = document.getElementById('licencesTableBody');
-        const totalCount = document.getElementById('totalCount');
-        
-        totalCount.textContent = licences.length;
-        
-        if (licences.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: #666;">Aucune licence trouvée</td></tr>';
-          return;
-        }
-        
-        tbody.innerHTML = licences.map(licence => `
-          <tr>
-            <td>${licence.nom || ''}</td>
-            <td>${licence.prenom || ''}</td>
-            <td><code>${licence.numeroLicence || 'N/A'}</code></td>
-            <td><span class="status-${licence.statut}">${formatStatut(licence.statut)}</span></td>
-            <td>${licence.categorie || ''}</td>
-            <td>${licence.dateExpiration ? formatDate(licence.dateExpiration) : 'N/A'}</td>
-            <td>
-              <button class="btn btn-sm btn-danger" onclick="deleteLicence('${licence.id}')">
-                🗑️ Supprimer
-              </button>
-            </td>
-          </tr>
-        `).join('');
-      }
-
-      // 🐛 FIX: Ouvrir modal nouvelle licence avec vérifications
-      function openLicenceModal() {
-        // Éviter d'ouvrir plusieurs fois la modal
-        if (isModalOpen) {
-          console.log('Modal déjà ouverte, éviter la duplication');
-          return;
-        }
-        
-        console.log('🔵 Ouverture modal nouvelle licence');
-        isModalOpen = true;
-        
-        const modal = document.getElementById('licenceModal');
-        modal.classList.remove('hidden');
-        
-        // Réinitialiser le formulaire
-        document.getElementById('licenceForm').reset();
-        
-        // Valeurs par défaut
-        const today = new Date().toISOString().split('T')[0];
-        const nextYear = new Date();
-        nextYear.setFullYear(nextYear.getFullYear() + 1);
-        
-        document.getElementById('dateEmission').value = today;
-        document.getElementById('dateExpiration').value = nextYear.toISOString().split('T')[0];
-        document.getElementById('statut').value = 'active';
-        document.getElementById('categorie').value = 'senior';
-        
-        // Focus sur le premier champ
-        setTimeout(() => {
-          document.getElementById('nom').focus();
-        }, 100);
-      }
-
-      // 🐛 FIX: Fermer modal avec nettoyage complet
-      function closeLicenceModal() {
-        if (!isModalOpen) {
-          return; // Éviter les appels multiples
-        }
-        
-        console.log('🔴 Fermeture modal licence');
-        isModalOpen = false;
-        
-        const modal = document.getElementById('licenceModal');
-        modal.classList.add('hidden');
-        
-        // Réinitialiser complètement le formulaire
-        const form = document.getElementById('licenceForm');
-        form.reset();
-        
-        // Nettoyer les valeurs des champs manuellement
-        ['nom', 'prenom', 'numeroLicence', 'sport', 'email', 'dateEmission', 'dateExpiration'].forEach(id => {
-          const element = document.getElementById(id);
-          if (element) element.value = '';
-        });
-        
-        // Réinitialiser les selects
-        document.getElementById('statut').selectedIndex = 0;
-        document.getElementById('categorie').selectedIndex = 0;
-      }
-
-      // Soumettre nouvelle licence
-      async function handleLicenceSubmit(event) {
-        event.preventDefault();
-        
-        // 🐛 FIX: Vérifier que la modal est bien ouverte
-        if (!isModalOpen) {
-          console.warn('Tentative de soumission alors que la modal est fermée');
-          return;
-        }
-        
-        const formData = new FormData(event.target);
-        const licenceData = Object.fromEntries(formData.entries());
-        
-        // Générer ID et numéro de licence
-        licenceData.id = generateId();
-        if (!licenceData.numeroLicence) {
-          licenceData.numeroLicence = generateLicenceNumber();
-        }
-        
-        try {
-          if (useOfflineMode) {
-            licences.push(licenceData);
-            saveToStorage('licences', licences);
-          } else {
-            const { data, error } = await supabase
-              .from(APP_CONFIG.licencesTable)
-              .insert([licenceData])
-              .select()
-              .single();
-              
-            if (error) throw error;
-            licences.push(data);
-          }
-          
-          showToast('Licence créée avec succès', 'success');
-          closeLicenceModal();
-          renderLicences();
-          
-        } catch (error) {
-          console.error('Erreur création licence:', error);
-          showToast('Erreur lors de la création', 'error');
-        }
-      }
-
-      // Supprimer licence
-      async function deleteLicence(licenceId) {
-        if (!confirm('Êtes-vous sûr de vouloir supprimer cette licence ?')) {
-          return;
-        }
-        
-        try {
-          if (useOfflineMode) {
-            licences = licences.filter(l => l.id !== licenceId);
-            saveToStorage('licences', licences);
-          } else {
-            const { error } = await supabase
-              .from(APP_CONFIG.licencesTable)
-              .delete()
-              .eq('id', licenceId);
-              
-            if (error) throw error;
-            licences = licences.filter(l => l.id !== licenceId);
-          }
-          
-          showToast('Licence supprimée', 'success');
-          renderLicences();
-          
-        } catch (error) {
-          console.error('Erreur suppression:', error);
-          showToast('Erreur lors de la suppression', 'error');
-        }
-      }
-
-      // Utilitaires
-      function generateId() {
-        return 'lic_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-      }
-
-      function generateLicenceNumber() {
-        const year = new Date().getFullYear();
-        const num = Math.floor(Math.random() * 9999) + 1;
-        return `${year}${num.toString().padStart(4, '0')}`;
-      }
-
-      function formatStatut(statut) {
-        const statuts = {
-          active: 'Active',
-          suspendue: 'Suspendue',
-          expiree: 'Expirée',
-          annulee: 'Annulée'
-        };
-        return statuts[statut] || statut;
-      }
-
-      function formatDate(dateStr) {
-        if (!dateStr) return '';
-        const date = new Date(dateStr);
-        return date.toLocaleDateString('fr-FR');
-      }
-
-      function showToast(message, type = 'success') {
-        const toast = document.createElement('div');
-        toast.className = `toast toast-${type}`;
-        toast.textContent = message;
-        document.body.appendChild(toast);
-        
-        setTimeout(() => {
-          toast.remove();
-        }, 3000);
-      }
-
-      // Gestion cookies
-      function setCookie(name, value, days) {
-        const expires = new Date(Date.now() + days * 864e5).toUTCString();
-        document.cookie = `${name}=${value}; expires=${expires}; path=/`;
-      }
-
-      function getCookie(name) {
-        return document.cookie.split('; ').reduce((r, v) => {
-          const parts = v.split('=');
-          return parts[0] === name ? decodeURIComponent(parts[1]) : r;
-        }, '');
-      }
-
-      function deleteCookie(name) {
-        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
-      }
-
-      // Gestion localStorage
-      function saveToStorage(key, data) {
-        try {
-          localStorage.setItem(key, JSON.stringify(data));
-        } catch (error) {
-          console.warn('Erreur localStorage:', error);
-        }
-      }
-
-      function getFromStorage(key, defaultValue = null) {
-        try {
-          const data = localStorage.getItem(key);
-          return data ? JSON.parse(data) : defaultValue;
-        } catch (error) {
-          console.warn('Erreur localStorage:', error);
-          return defaultValue;
-        }
-      }
+      // Export global pour debug
+      window.AppState = AppState;
+      window.ModalManager = ModalManager;
+      window.LicenceManager = LicenceManager;
+      window.AuthManager = AuthManager;
     </script>
   </body>
 </html>
