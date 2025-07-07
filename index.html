@@ -201,6 +201,7 @@
       let licences = [];
       let supabase = null;
       let useOfflineMode = false;
+      let isModalOpen = false; // 🐛 FIX: Variable pour traquer l'état de la modal
 
       // Initialisation
       document.addEventListener('DOMContentLoaded', async function() {
@@ -235,7 +236,29 @@
 
         // Événements
         setupEventListeners();
+        
+        // 🐛 FIX: Ajouter listener pour fermer modal en cliquant à l'extérieur
+        setupModalEvents();
       });
+
+      // 🐛 FIX: Configuration des événements de la modal
+      function setupModalEvents() {
+        const modal = document.getElementById('licenceModal');
+        
+        // Fermer en cliquant à l'extérieur de la modal
+        modal.addEventListener('click', function(event) {
+          if (event.target === modal && isModalOpen) {
+            closeLicenceModal();
+          }
+        });
+        
+        // Fermer avec la touche Echap
+        document.addEventListener('keydown', function(event) {
+          if (event.key === 'Escape' && isModalOpen) {
+            closeLicenceModal();
+          }
+        });
+      }
 
       // Configuration des événements
       function setupEventListeners() {
@@ -306,6 +329,10 @@
       function handleLogout() {
         currentUser = null;
         deleteCookie('session_user');
+        // 🐛 FIX: Fermer la modal si ouverte lors de la déconnexion
+        if (isModalOpen) {
+          closeLicenceModal();
+        }
         showLoginPage();
         showToast('Déconnexion réussie', 'success');
       }
@@ -378,9 +405,22 @@
         `).join('');
       }
 
-      // Ouvrir modal nouvelle licence
+      // 🐛 FIX: Ouvrir modal nouvelle licence avec vérifications
       function openLicenceModal() {
-        document.getElementById('licenceModal').classList.remove('hidden');
+        // Éviter d'ouvrir plusieurs fois la modal
+        if (isModalOpen) {
+          console.log('Modal déjà ouverte, éviter la duplication');
+          return;
+        }
+        
+        console.log('🔵 Ouverture modal nouvelle licence');
+        isModalOpen = true;
+        
+        const modal = document.getElementById('licenceModal');
+        modal.classList.remove('hidden');
+        
+        // Réinitialiser le formulaire
+        document.getElementById('licenceForm').reset();
         
         // Valeurs par défaut
         const today = new Date().toISOString().split('T')[0];
@@ -391,17 +431,49 @@
         document.getElementById('dateExpiration').value = nextYear.toISOString().split('T')[0];
         document.getElementById('statut').value = 'active';
         document.getElementById('categorie').value = 'senior';
+        
+        // Focus sur le premier champ
+        setTimeout(() => {
+          document.getElementById('nom').focus();
+        }, 100);
       }
 
-      // Fermer modal
+      // 🐛 FIX: Fermer modal avec nettoyage complet
       function closeLicenceModal() {
-        document.getElementById('licenceModal').classList.add('hidden');
-        document.getElementById('licenceForm').reset();
+        if (!isModalOpen) {
+          return; // Éviter les appels multiples
+        }
+        
+        console.log('🔴 Fermeture modal licence');
+        isModalOpen = false;
+        
+        const modal = document.getElementById('licenceModal');
+        modal.classList.add('hidden');
+        
+        // Réinitialiser complètement le formulaire
+        const form = document.getElementById('licenceForm');
+        form.reset();
+        
+        // Nettoyer les valeurs des champs manuellement
+        ['nom', 'prenom', 'numeroLicence', 'sport', 'email', 'dateEmission', 'dateExpiration'].forEach(id => {
+          const element = document.getElementById(id);
+          if (element) element.value = '';
+        });
+        
+        // Réinitialiser les selects
+        document.getElementById('statut').selectedIndex = 0;
+        document.getElementById('categorie').selectedIndex = 0;
       }
 
       // Soumettre nouvelle licence
       async function handleLicenceSubmit(event) {
         event.preventDefault();
+        
+        // 🐛 FIX: Vérifier que la modal est bien ouverte
+        if (!isModalOpen) {
+          console.warn('Tentative de soumission alors que la modal est fermée');
+          return;
+        }
         
         const formData = new FormData(event.target);
         const licenceData = Object.fromEntries(formData.entries());
