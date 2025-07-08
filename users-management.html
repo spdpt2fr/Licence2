@@ -17,6 +17,19 @@
             border-radius: 8px;
         }
         
+        .connection-status {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+            display: inline-block;
+        }
+        
+        .status-online { background: rgba(46, 204, 113, 0.8); }
+        .status-offline { background: rgba(231, 76, 60, 0.8); }
+        .status-connecting { background: rgba(52, 152, 219, 0.8); }
+        
         .admin-stats {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -58,20 +71,9 @@
             text-transform: uppercase;
         }
         
-        .role-admin {
-            background: #e74c3c;
-            color: white;
-        }
-        
-        .role-manager {
-            background: #f39c12;
-            color: white;
-        }
-        
-        .role-user {
-            background: #3498db;
-            color: white;
-        }
+        .role-admin { background: #e74c3c; color: white; }
+        .role-manager { background: #f39c12; color: white; }
+        .role-user { background: #3498db; color: white; }
         
         .status-badge {
             padding: 0.25rem 0.75rem;
@@ -80,20 +82,9 @@
             font-weight: bold;
         }
         
-        .status-active {
-            background: #2ecc71;
-            color: white;
-        }
-        
-        .status-inactive {
-            background: #95a5a6;
-            color: white;
-        }
-        
-        .status-pending {
-            background: #e67e22;
-            color: white;
-        }
+        .status-active { background: #2ecc71; color: white; }
+        .status-inactive { background: #95a5a6; color: white; }
+        .status-pending { background: #e67e22; color: white; }
         
         .back-btn {
             background: #6c757d;
@@ -142,6 +133,7 @@
         <div class="admin-header">
             <h1>🛠️ Administration des Utilisateurs</h1>
             <p>Gestion complète des comptes utilisateurs et des permissions</p>
+            <div class="connection-status" id="connectionStatus">🔄 Connexion en cours...</div>
         </div>
         
         <!-- Statistiques -->
@@ -292,15 +284,26 @@
         // Initialisation
         document.addEventListener('DOMContentLoaded', async () => {
             console.log('🚀 Initialisation module gestion utilisateurs...');
+            updateConnectionStatus('🔄 Connexion en cours...', 'connecting');
+            
             try {
                 supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                console.log('✅ Client Supabase initialisé');
+                
                 await loadUsers();
                 setupEventListeners();
             } catch (error) {
                 console.error('❌ Erreur:', error);
-                loadTestUsers(); // Mode offline
+                updateConnectionStatus('❌ Erreur de connexion', 'offline');
+                showNotification('Erreur de connexion à la base de données', 'danger');
             }
         });
+        
+        function updateConnectionStatus(message, status) {
+            const statusElement = document.getElementById('connectionStatus');
+            statusElement.textContent = message;
+            statusElement.className = `connection-status status-${status}`;
+        }
         
         function setupEventListeners() {
             // Boutons principaux
@@ -331,96 +334,39 @@
         
         async function loadUsers() {
             try {
-                console.log('🔄 Chargement des utilisateurs...');
+                console.log('🔄 Chargement des utilisateurs depuis Supabase...');
+                updateConnectionStatus('🔄 Chargement depuis la base...', 'connecting');
                 
-                // Tentative de chargement depuis Supabase
+                // Chargement depuis Supabase
                 const { data, error } = await supabase
                     .from('users')
                     .select('*')
                     .order('created_at', { ascending: false });
                 
-                if (error && error.code !== 'PGRST116') { // PGRST116 = table not found
-                    throw error;
+                if (error) {
+                    console.error('❌ Erreur Supabase:', error);
+                    throw new Error(`Erreur base de données: ${error.message}`);
                 }
                 
-                if (data && data.length > 0) {
-                    users = data;
-                    isOnlineMode = true;
-                    console.log(`✅ ${users.length} utilisateurs chargés depuis Supabase`);
-                } else {
-                    // Mode offline avec données de test
-                    loadTestUsers();
-                    isOnlineMode = false;
-                    console.log('📱 Mode offline - Données de test chargées');
-                }
+                users = data || [];
+                isOnlineMode = true;
+                
+                console.log(`✅ ${users.length} utilisateurs chargés depuis Supabase`);
+                updateConnectionStatus(`✅ Connecté à la base (${users.length} utilisateurs)`, 'online');
                 
                 renderUsers();
                 updateStats();
-                showNotification(`${users.length} utilisateurs chargés ${isOnlineMode ? '(Base de données)' : '(Mode test)'}`, 'success');
+                showNotification(`${users.length} utilisateurs chargés depuis la base de données`, 'success');
                 
             } catch (error) {
                 console.error('❌ Erreur chargement utilisateurs:', error);
-                loadTestUsers();
-                isOnlineMode = false;
+                updateConnectionStatus('❌ Erreur de connexion', 'offline');
+                showNotification(`Erreur: ${error.message}`, 'danger');
+                
+                users = [];
                 renderUsers();
                 updateStats();
-                showNotification('Mode offline - Données de test', 'warning');
             }
-        }
-        
-        function loadTestUsers() {
-            users = [
-                {
-                    id: 1,
-                    nom: 'Jean Dupont',
-                    email: 'jean.dupont@exemple.fr',
-                    role: 'admin',
-                    status: 'active',
-                    departement: 'IT',
-                    created_at: '2024-01-15T10:00:00Z',
-                    last_login: '2024-07-08T08:30:00Z'
-                },
-                {
-                    id: 2,
-                    nom: 'Marie Martin',
-                    email: 'marie.martin@exemple.fr',
-                    role: 'manager',
-                    status: 'active',
-                    departement: 'RH',
-                    created_at: '2024-02-20T14:30:00Z',
-                    last_login: '2024-07-07T16:45:00Z'
-                },
-                {
-                    id: 3,
-                    nom: 'Pierre Durand',
-                    email: 'pierre.durand@exemple.fr',
-                    role: 'user',
-                    status: 'active',
-                    departement: 'Commercial',
-                    created_at: '2024-03-10T09:15:00Z',
-                    last_login: '2024-07-06T11:20:00Z'
-                },
-                {
-                    id: 4,
-                    nom: 'Sophie Leblanc',
-                    email: 'sophie.leblanc@exemple.fr',
-                    role: 'user',
-                    status: 'pending',
-                    departement: 'Marketing',
-                    created_at: '2024-07-07T15:00:00Z',
-                    last_login: null
-                },
-                {
-                    id: 5,
-                    nom: 'Thomas Petit',
-                    email: 'thomas.petit@exemple.fr',
-                    role: 'user',
-                    status: 'inactive',
-                    departement: 'IT',
-                    created_at: '2024-01-05T12:00:00Z',
-                    last_login: '2024-06-15T10:30:00Z'
-                }
-            ];
         }
         
         function renderUsers() {
@@ -429,7 +375,7 @@
             
             if (users.length === 0) {
                 const row = document.createElement('tr');
-                row.innerHTML = '<td colspan="8" style="text-align: center; color: #666; padding: 20px;">Aucun utilisateur trouvé</td>';
+                row.innerHTML = '<td colspan="8" style="text-align: center; color: #666; padding: 20px;">Aucun utilisateur trouvé dans la base de données</td>';
                 tbody.appendChild(row);
                 return;
             }
@@ -444,8 +390,8 @@
             
             row.innerHTML = `
                 <td>#${user.id}</td>
-                <td>${user.nom}</td>
-                <td>${user.email}</td>
+                <td>${escapeHtml(user.nom)}</td>
+                <td>${escapeHtml(user.email)}</td>
                 <td><span class="role-badge role-${user.role}">${getRoleLabel(user.role)}</span></td>
                 <td><span class="status-badge status-${user.status}">${getStatusLabel(user.status)}</span></td>
                 <td>${formatDate(user.created_at)}</td>
@@ -476,7 +422,7 @@
             
             if (user) {
                 // Mode édition
-                document.getElementById('modalTitle').textContent = 'Modifier l\\'utilisateur';
+                document.getElementById('modalTitle').textContent = 'Modifier l\'utilisateur';
                 document.getElementById('saveText').textContent = 'Mettre à jour';
                 
                 // Remplir le formulaire
@@ -517,12 +463,18 @@
             try {
                 const formData = new FormData(document.getElementById('userForm'));
                 const userData = {
-                    nom: formData.get('nom'),
-                    email: formData.get('email'),
+                    nom: formData.get('nom').trim(),
+                    email: formData.get('email').trim(),
                     role: formData.get('role'),
                     status: formData.get('status'),
-                    departement: formData.get('departement') || null
+                    departement: formData.get('departement')?.trim() || null
                 };
+                
+                // Validation côté client
+                if (!userData.nom || !userData.email || !userData.role) {
+                    showNotification('Veuillez remplir tous les champs obligatoires', 'danger');
+                    return;
+                }
                 
                 // Gestion du mot de passe
                 const password = formData.get('password');
@@ -530,42 +482,33 @@
                     userData.password_hash = 'hashed_' + password; // Simulation hash
                 } else if (!editingUserId) {
                     // Génération automatique pour nouveau utilisateur
-                    userData.password_hash = 'hashed_' + generatePassword();
+                    const generatedPassword = generatePassword();
+                    userData.password_hash = 'hashed_' + generatedPassword;
+                    console.log('Mot de passe généré:', generatedPassword);
                 }
                 
-                console.log('💾 Sauvegarde utilisateur:', userData);
+                console.log('💾 Sauvegarde utilisateur:', { ...userData, password_hash: '[HIDDEN]' });
                 
-                if (isOnlineMode) {
-                    // Mode online - Supabase
-                    let result;
-                    if (editingUserId) {
-                        userData.updated_at = new Date().toISOString();
-                        result = await supabase
-                            .from('users')
-                            .update(userData)
-                            .eq('id', editingUserId);
-                    } else {
-                        userData.created_at = new Date().toISOString();
-                        userData.updated_at = new Date().toISOString();
-                        result = await supabase
-                            .from('users')
-                            .insert([userData]);
-                    }
-                    
-                    if (result.error) throw result.error;
+                let result;
+                if (editingUserId) {
+                    // Mise à jour
+                    userData.updated_at = new Date().toISOString();
+                    result = await supabase
+                        .from('users')
+                        .update(userData)
+                        .eq('id', editingUserId);
                 } else {
-                    // Mode offline - Simulation
-                    if (editingUserId) {
-                        const index = users.findIndex(u => u.id === editingUserId);
-                        if (index !== -1) {
-                            users[index] = { ...users[index], ...userData, updated_at: new Date().toISOString() };
-                        }
-                    } else {
-                        userData.id = Math.max(...users.map(u => u.id), 0) + 1;
-                        userData.created_at = new Date().toISOString();
-                        userData.last_login = null;
-                        users.unshift(userData);
-                    }
+                    // Création
+                    userData.created_at = new Date().toISOString();
+                    userData.updated_at = new Date().toISOString();
+                    result = await supabase
+                        .from('users')
+                        .insert([userData]);
+                }
+                
+                if (result.error) {
+                    console.error('❌ Erreur Supabase:', result.error);
+                    throw new Error(result.error.message);
                 }
                 
                 closeUserModal();
@@ -584,15 +527,14 @@
             try {
                 console.log('🗑️ Suppression utilisateur ID:', id);
                 
-                if (isOnlineMode) {
-                    const result = await supabase
-                        .from('users')
-                        .delete()
-                        .eq('id', id);
-                    
-                    if (result.error) throw result.error;
-                } else {
-                    users = users.filter(u => u.id !== id);
+                const result = await supabase
+                    .from('users')
+                    .delete()
+                    .eq('id', id);
+                
+                if (result.error) {
+                    console.error('❌ Erreur Supabase:', result.error);
+                    throw new Error(result.error.message);
                 }
                 
                 await loadUsers();
@@ -629,6 +571,11 @@
         }
         
         function exportUsers() {
+            if (users.length === 0) {
+                showNotification('Aucun utilisateur à exporter', 'warning');
+                return;
+            }
+            
             const csvContent = [
                 ['ID', 'Nom', 'Email', 'Rôle', 'Statut', 'Département', 'Créé le', 'Dernière connexion'],
                 ...users.map(user => [
@@ -721,11 +668,23 @@
             return labels[status] || status;
         }
         
+        function escapeHtml(text) {
+            if (!text) return '';
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, m => map[m]);
+        }
+        
         function showNotification(message, type = 'info') {
             const container = document.getElementById('notificationsContainer') || createNotificationsContainer();
             const toast = document.createElement('div');
             toast.className = `toast toast-${type}`;
-            toast.innerHTML = `<div class="toast-content"><span>${message}</span><button class="toast-close" onclick="this.parentElement.parentElement.remove()">✕</button></div>`;
+            toast.innerHTML = `<div class="toast-content"><span>${escapeHtml(message)}</span><button class="toast-close" onclick="this.parentElement.parentElement.remove()">✕</button></div>`;
             container.appendChild(toast);
             setTimeout(() => toast.classList.add('show'), 100);
             setTimeout(() => { toast.classList.add('removing'); setTimeout(() => toast.remove(), 300); }, 5000);
