@@ -433,7 +433,7 @@
             
             if (user) {
                 // Mode édition - utiliser la même logique flexible
-                document.getElementById('modalTitle').textContent = 'Modifier l\\'utilisateur';
+                document.getElementById('modalTitle').textContent = "Modifier l'utilisateur";
                 document.getElementById('saveText').textContent = 'Mettre à jour';
                 
                 const name = user.nom || user.name || user.full_name || user.username || '';
@@ -694,7 +694,7 @@
                 '"': '&quot;',
                 "'": '&#039;'
             };
-            return text.replace(/[&<>"']/g, m => map[m]);
+            return text.replace(/[&<>\"']/g, m => map[m]);
         }
         
         function showNotification(message, type = 'info') {
