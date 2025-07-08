@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Test Diagnostic - Licence2 v3.0</title>
+    <link rel="stylesheet" href="style.css" />
+    <!-- Supabase CDN -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  </head>
+  <body>
+    <!-- Page de connexion -->
+    <div id="loginPage" class="login-page">
+      <form id="loginForm" class="login-form">
+        <h2>Connexion v3.0 - Test Diagnostic</h2>
+        <input id="loginUser" type="text" placeholder="Login" required />
+        <input id="loginPass" type="password" placeholder="Mot de passe" required />
+        <button type="submit" class="btn btn-primary">Se connecter</button>
+        <p class="login-hint">Identifiants par défaut: <b>Admin/Admin</b></p>
+      </form>
+    </div>
+
+    <!-- Application principale -->
+    <div id="mainApp" class="container hidden">
+      <h1>Application Licence2 v3.0</h1>
+      <p>Test de diagnostic réussi !</p>
+      <div id="headerContainer"></div>
+      <div id="alertsContainer"></div>
+      <div id="tableContainer"></div>
+    </div>
+
+    <!-- Test diagnostic modulaire -->
+    <script type="module">
+      console.log('🔍 DIAGNOSTIC: Début du test modulaire');
+      
+      try {
+        // Test 1: Import configuration
+        console.log('📁 Test 1: Import config...');
+        const { APP_CONFIG } = await import('./src/config/app.config.js');
+        console.log('✅ Config importée:', APP_CONFIG);
+        
+        // Test 2: Import constantes  
+        console.log('📁 Test 2: Import constantes...');
+        const { EVENTS } = await import('./src/config/constants.js');
+        console.log('✅ Constantes importées:', EVENTS);
+        
+        // Test 3: Import Supabase config
+        console.log('📁 Test 3: Import Supabase...');
+        const { initSupabase } = await import('./src/config/supabase.config.js');
+        console.log('✅ Supabase config importée');
+        
+        // Test 4: Import API Base
+        console.log('📁 Test 4: Import BaseAPI...');
+        const BaseAPI = await import('./src/core/api/base.js');
+        console.log('✅ BaseAPI importée:', BaseAPI);
+        
+        // Test 5: Import API Users
+        console.log('📁 Test 5: Import UsersAPI...');
+        const UsersAPI = await import('./src/core/api/users.js');
+        console.log('✅ UsersAPI importée:', UsersAPI);
+        
+        // Test 6: Import utils
+        console.log('📁 Test 6: Import utils...');
+        const { notifications } = await import('./src/utils/notifications.js');
+        console.log('✅ Notifications importées:', notifications);
+        
+        // Test 7: Import app principal
+        console.log('📁 Test 7: Import app principal...');
+        const app = await import('./src/app.js');
+        console.log('✅ App principale importée:', app);
+        
+        // Success - L'application fonctionne
+        window.licence2App = app.default;
+        console.log('🎉 DIAGNOSTIC RÉUSSI: Tous les modules importés');
+        
+        // Initialiser l'app
+        await window.licence2App.init();
+        console.log('🚀 Application initialisée avec succès');
+        
+      } catch (error) {
+        console.error('❌ DIAGNOSTIC ÉCHOUÉ:', error);
+        console.error('Stack:', error.stack);
+        alert('Erreur module: ' + error.message);
+      }
+      
+      // Gestion connexion simplifiée
+      document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const username = document.getElementById('loginUser').value.trim();
+        const password = document.getElementById('loginPass').value;
+        
+        console.log('🔑 Tentative de connexion:', username);
+        
+        if (window.licence2App) {
+          try {
+            const result = await window.licence2App.login(username, password);
+            console.log('🔑 Résultat connexion:', result);
+            
+            if (result.success) {
+              document.getElementById('loginPage').classList.add('hidden');
+              document.getElementById('mainApp').classList.remove('hidden');
+              console.log('✅ Connexion réussie');
+            } else {
+              alert('Connexion échouée: ' + (result.error || 'Identifiants incorrects'));
+            }
+          } catch (error) {
+            console.error('❌ Erreur connexion:', error);
+            alert('Erreur: ' + error.message);
+          }
+        } else {
+          alert('Application non initialisée');
+        }
+      });
+    </script>
+  </body>
+</html>
