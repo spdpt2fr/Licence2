@@ -56,7 +56,99 @@ body {
   text-align: center;
 }
 
-/* Header */
+/* Header V3.0 */
+.header-v3 {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 25px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  border-radius: 12px;
+  color: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  margin-bottom: 20px;
+}
+
+.header-v3 .header-left h1 {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.header-v3 .header-center {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.header-v3 .status-display {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 15px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.header-v3 .status-indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #e53e3e;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
+}
+
+.header-v3 .status-indicator.online {
+  background: #38a169;
+  box-shadow: 0 0 8px rgba(56, 161, 105, 0.5);
+}
+
+.header-v3 .status-indicator.offline {
+  background: #e53e3e;
+  box-shadow: 0 0 8px rgba(229, 62, 62, 0.5);
+}
+
+.header-v3 .header-right {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.header-v3 .user-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 15px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
+  font-size: 0.9rem;
+}
+
+.header-v3 .user-name {
+  font-weight: 600;
+}
+
+.header-v3 .user-role {
+  opacity: 0.8;
+  font-size: 0.8rem;
+}
+
+/* Header - responsive */
+@media (max-width: 768px) {
+  .header-v3 {
+    flex-direction: column;
+    gap: 10px;
+    text-align: center;
+  }
+  
+  .header-v3 .header-left h1 {
+    font-size: 1.5rem;
+  }
+}
+
+/* Header legacy */
 .app-header {
   display: flex;
   justify-content: space-between;
@@ -86,6 +178,7 @@ body {
   font-weight: 500;
   color: #fff;
 }
+
 .status-indicator {
   width: 8px;
   height: 8px;
