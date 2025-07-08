@@ -35,10 +35,11 @@
 
     <!-- Point d'entrée modulaire -->
     <script type="module">
-      import { Licence2App } from './src/app.js';
+      // Import corrrigé avec export par défaut
+      import app from './src/app.js';
       
       // Instance globale de l'application
-      window.licence2App = new Licence2App();
+      window.licence2App = app;
       
       // Initialisation au chargement
       document.addEventListener('DOMContentLoaded', async () => {
