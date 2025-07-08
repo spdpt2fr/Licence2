@@ -3,672 +3,75 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Gestionnaire de Licences - AVEC BASE DE DONNÉES</title>
-    <style>
-      * { box-sizing: border-box; margin: 0; padding: 0; }
-      body { font-family: Arial, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-      .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
-      .login-page { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
-      .login-form { background: white; padding: 40px; border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); width: 100%; max-width: 400px; }
-      .form-group { margin-bottom: 20px; }
-      .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
-      .form-control { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 5px; font-size: 16px; }
-      .btn { padding: 12px 24px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; transition: all 0.3s; }
-      .btn-primary { background: #667eea; color: white; width: 100%; }
-      .btn-primary:hover { background: #5a6fd8; }
-      .app-header { background: white; padding: 15px 0; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 30px; }
-      .navbar { display: flex; justify-content: space-between; align-items: center; }
-      .navbar h1 { color: #333; }
-      .nav-user { display: flex; align-items: center; gap: 15px; }
-      .btn-secondary { background: #6c757d; color: white; }
-      .btn-secondary:hover { background: #545b62; }
-      .app-content { background: white; border-radius: 10px; padding: 30px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
-      .licences-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
-      .btn-success { background: #28a745; color: white; }
-      .btn-success:hover { background: #1e7e34; }
-      .licences-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-      .licences-table th, .licences-table td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
-      .licences-table th { background: #f8f9fa; font-weight: bold; }
-      .licences-table tr:hover { background: #f8f9fa; }
-      .status-active { color: #28a745; font-weight: bold; }
-      .status-expired { color: #dc3545; font-weight: bold; }
-      .status-suspended { color: #ffc107; font-weight: bold; }
-      .hidden { display: none !important; }
-      .toast { position: fixed; top: 20px; right: 20px; padding: 15px 20px; border-radius: 5px; color: white; z-index: 1000; }
-      .toast-success { background: #28a745; }
-      .toast-error { background: #dc3545; }
-      .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 999; }
-      .modal-content { background: white; padding: 30px; border-radius: 10px; width: 90%; max-width: 600px; max-height: 80vh; overflow-y: auto; }
-      .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-      .modal-close { background: none; border: none; font-size: 24px; cursor: pointer; }
-      .form-row { display: flex; gap: 15px; }
-      .form-row .form-group { flex: 1; }
-      .btn-sm { padding: 8px 12px; font-size: 14px; }
-      .btn-danger { background: #dc3545; color: white; }
-      .btn-danger:hover { background: #c82333; }
-      .db-status { background: #e7f3ff; color: #0066cc; padding: 10px; text-align: center; font-weight: bold; border: 1px solid #b3d9ff; margin-bottom: 20px; border-radius: 5px; }
-    </style>
+    <title>Gestionnaire de Licences v3.0 - Architecture Modulaire</title>
+    <link rel="stylesheet" href="style.css" />
+
+    <!-- Supabase CDN -->
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
   </head>
   <body>
-    <div class="db-status" id="dbStatus">🔗 Connexion à la base de données...</div>
-    
+    <!-- Page de connexion -->
     <div id="loginPage" class="login-page">
       <form id="loginForm" class="login-form">
-        <h2 style="text-align: center; margin-bottom: 30px; color: #333;">Connexion</h2>
-        <div class="form-group">
-          <label for="login">Nom d'utilisateur</label>
-          <input type="text" id="login" name="login" class="form-control" required value="admin">
-        </div>
-        <div class="form-group">
-          <label for="password">Mot de passe</label>
-          <input type="password" id="password" name="password" class="form-control" required value="admin">
-        </div>
+        <h2>Connexion v3.0</h2>
+        <input id="loginUser" type="text" placeholder="Login" required />
+        <input id="loginPass" type="password" placeholder="Mot de passe" required />
         <button type="submit" class="btn btn-primary">Se connecter</button>
+        <p class="login-hint">Identifiants par défaut: <b>Admin/Admin</b></p>
       </form>
     </div>
 
-    <div id="appPage" class="hidden">
-      <header class="app-header">
-        <div class="container">
-          <nav class="navbar">
-            <h1>🎫 Gestionnaire de Licences</h1>
-            <div class="nav-user">
-              <span id="userDisplay">Administrateur</span>
-              <button id="logoutBtn" class="btn btn-secondary">Déconnexion</button>
-            </div>
-          </nav>
-        </div>
-      </header>
-
-      <main class="container">
-        <div class="app-content">
-          <div class="licences-header">
-            <h2>Liste des licences</h2>
-            <div>
-              <button id="refreshBtn" class="btn btn-secondary" style="margin-right: 10px;">🔄 Actualiser</button>
-              <button id="addLicenceBtn" class="btn btn-success">➕ Nouvelle licence</button>
-            </div>
-          </div>
-          
-          <div id="licencesStats">
-            <p><strong>Total:</strong> <span id="totalCount">0</span> licence(s) | <strong>Source:</strong> <span id="dataSource">Base de données</span></p>
-          </div>
-
-          <table class="licences-table">
-            <thead>
-              <tr>
-                <th>Nom</th>
-                <th>Prénom</th>
-                <th>N° Licence</th>
-                <th>Statut</th>
-                <th>Catégorie</th>
-                <th>Expiration</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody id="licencesTableBody">
-              <!-- Les licences seront affichées ici -->
-            </tbody>
-          </table>
-        </div>
-      </main>
+    <!-- Application principale -->
+    <div id="mainApp" class="container hidden">
+      <!-- Le header sera injecté ici par HeaderComponent -->
+      <div id="headerContainer"></div>
+      
+      <!-- Les alertes seront injectées ici par AlertsComponent -->
+      <div id="alertsContainer"></div>
+      
+      <!-- Le tableau sera injecté ici par LicenceTableComponent -->
+      <div id="tableContainer"></div>
     </div>
 
-    <div id="licenceModal" class="modal hidden" style="display: none;">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h3>Nouvelle licence</h3>
-          <button class="modal-close" type="button">&times;</button>
-        </div>
+    <!-- Point d'entrée modulaire -->
+    <script type="module">
+      import { Licence2App } from './src/app.js';
+      
+      // Instance globale de l'application
+      window.licence2App = new Licence2App();
+      
+      // Initialisation au chargement
+      document.addEventListener('DOMContentLoaded', async () => {
+        console.log('🚀 Démarrage Licence2 v3.0 - Architecture Modulaire');
         
-        <form id="licenceForm">
-          <div class="form-row">
-            <div class="form-group">
-              <label for="nom">Nom *</label>
-              <input type="text" id="nom" name="nom" class="form-control" required>
-            </div>
-            <div class="form-group">
-              <label for="prenom">Prénom *</label>
-              <input type="text" id="prenom" name="prenom" class="form-control" required>
-            </div>
-          </div>
-          
-          <div class="form-row">
-            <div class="form-group">
-              <label for="numeroLicence">N° Licence</label>
-              <input type="text" id="numeroLicence" name="numeroLicence" class="form-control" placeholder="Auto-généré">
-            </div>
-            <div class="form-group">
-              <label for="statut">Statut *</label>
-              <select id="statut" name="statut" class="form-control" required>
-                <option value="active">Active</option>
-                <option value="suspendue">Suspendue</option>
-                <option value="expiree">Expirée</option>
-              </select>
-            </div>
-          </div>
-          
-          <div class="form-row">
-            <div class="form-group">
-              <label for="categorie">Catégorie</label>
-              <select id="categorie" name="categorie" class="form-control">
-                <option value="junior">Junior</option>
-                <option value="senior">Senior</option>
-                <option value="veteran">Vétéran</option>
-                <option value="elite">Élite</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="sport">Sport</label>
-              <input type="text" id="sport" name="sport" class="form-control" placeholder="ex: Football">
-            </div>
-          </div>
-          
-          <div class="form-row">
-            <div class="form-group">
-              <label for="dateEmission">Date d'émission</label>
-              <input type="date" id="dateEmission" name="dateEmission" class="form-control">
-            </div>
-            <div class="form-group">
-              <label for="dateExpiration">Date d'expiration</label>
-              <input type="date" id="dateExpiration" name="dateExpiration" class="form-control">
-            </div>
-          </div>
-          
-          <div class="form-group">
-            <label for="email">Email</label>
-            <input type="email" id="email" name="email" class="form-control">
-          </div>
-          
-          <div style="margin-top: 30px; text-align: right;">
-            <button type="button" class="btn btn-secondary" id="cancelBtn">Annuler</button>
-            <button type="submit" class="btn btn-primary" style="margin-left: 10px;">Créer</button>
-          </div>
-        </form>
-      </div>
-    </div>
-
-    <script>
-      console.log('🚀 APP AVEC BASE DE DONNÉES - Version FINALE corrigée');
-      
-      // Configuration Supabase
-      const SUPABASE_CONFIG = {
-        url: 'https://qsbdzyhxppdbtsikhozp.supabase.co',
-        anon_key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFzYmR6eWh4cHBkYnRzaWtob3pwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE0NzI5OTYsImV4cCI6MjA2NzA0ODk5Nn0.kanu7GfIr-qDtd3wcSmDbjEMK9VYX4o9HdG4cD0rcus'
-      };
-      
-      // Variables globales
-      const AppState = {
-        currentUser: null,
-        licences: [],
-        isModalOpen: false,
-        supabaseClient: null,
-        useOfflineMode: false
-      };
-
-      // Initialisation Supabase
-      async function initSupabase() {
         try {
-          console.log('🔗 Initialisation Supabase...');
-          updateDBStatus('🔗 Connexion en cours...', 'connecting');
-          
-          AppState.supabaseClient = window.supabase.createClient(
-            SUPABASE_CONFIG.url, 
-            SUPABASE_CONFIG.anon_key
-          );
-          
-          const { data, error } = await AppState.supabaseClient
-            .from('licences')
-            .select('count', { count: 'exact' });
-          
-          if (error) throw error;
-          
-          console.log('✅ Connexion Supabase réussie - Count:', data);
-          updateDBStatus('✅ Connecté à la base de données Supabase', 'success');
-          AppState.useOfflineMode = false;
-          return true;
-          
+          await window.licence2App.init();
+          console.log('✅ Application initialisée avec succès');
         } catch (error) {
-          console.error('❌ Erreur Supabase:', error);
-          AppState.useOfflineMode = true;
-          updateDBStatus('⚠️ Mode hors ligne - Base non accessible', 'warning');
-          return false;
+          console.error('❌ Erreur initialisation:', error);
+          alert('Erreur lors de l\'initialisation de l\'application');
         }
-      }
-
-      function updateDBStatus(message, type) {
-        const dbStatus = document.getElementById('dbStatus');
-        if (dbStatus) {
-          dbStatus.textContent = message;
-          if (type === 'success') {
-            dbStatus.style.background = '#d4edda';
-            dbStatus.style.color = '#155724';
-          } else if (type === 'warning') {
-            dbStatus.style.background = '#fff3cd';
-            dbStatus.style.color = '#856404';
-          } else if (type === 'connecting') {
-            dbStatus.style.background = '#cce7ff';
-            dbStatus.style.color = '#004085';
-          }
-        }
-      }
-
-      // Utilitaires
-      const Utils = {
-        generateId() {
-          return 'lic_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-        },
-        generateLicenceNumber() {
-          const year = new Date().getFullYear();
-          const num = Math.floor(Math.random() * 9999) + 1;
-          return `${year}${num.toString().padStart(4, '0')}`;
-        },
-        formatStatut(statut) {
-          const statuts = {
-            active: 'Active',
-            suspendue: 'Suspendue',
-            expiree: 'Expirée',
-            annulee: 'Annulée'
-          };
-          return statuts[statut] || statut;
-        },
-        formatDate(dateStr) {
-          if (!dateStr) return '';
-          const date = new Date(dateStr);
-          return date.toLocaleDateString('fr-FR');
-        },
-        showToast(message, type = 'success') {
-          const toast = document.createElement('div');
-          toast.className = `toast toast-${type}`;
-          toast.textContent = message;
-          document.body.appendChild(toast);
-          setTimeout(() => {
-            if (toast.parentNode) toast.parentNode.removeChild(toast);
-          }, 3000);
-        },
-        setCookie(name, value, days) {
-          const expires = new Date(Date.now() + days * 864e5).toUTCString();
-          document.cookie = `${name}=${value}; expires=${expires}; path=/`;
-        },
-        getCookie(name) {
-          return document.cookie.split('; ').reduce((r, v) => {
-            const parts = v.split('=');
-            return parts[0] === name ? decodeURIComponent(parts[1]) : r;
-          }, '');
-        },
-        deleteCookie(name) {
-          document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
-        },
-        saveToStorage(key, data) {
-          try {
-            localStorage.setItem(key, JSON.stringify(data));
-          } catch (error) {
-            console.warn('Erreur localStorage:', error);
-          }
-        },
-        getFromStorage(key, defaultValue = null) {
-          try {
-            const data = localStorage.getItem(key);
-            return data ? JSON.parse(data) : defaultValue;
-          } catch (error) {
-            console.warn('Erreur localStorage:', error);
-            return defaultValue;
-          }
-        }
-      };
-
-      // Gestion des modals
-      const ModalManager = {
-        open() {
-          if (AppState.isModalOpen) return;
-          AppState.isModalOpen = true;
-          
-          const modal = document.getElementById('licenceModal');
-          if (modal) {
-            modal.classList.remove('hidden');
-            modal.style.display = 'flex';
-          }
-          this.setDefaultValues();
-          setTimeout(() => {
-            const nomField = document.getElementById('nom');
-            if (nomField) nomField.focus();
-          }, 100);
-        },
-        close() {
-          if (!AppState.isModalOpen) return;
-          AppState.isModalOpen = false;
-          
-          const modal = document.getElementById('licenceModal');
-          if (modal) {
-            modal.classList.add('hidden');
-            modal.style.display = 'none';
-          }
-          const form = document.getElementById('licenceForm');
-          if (form) form.reset();
-        },
-        setDefaultValues() {
-          const today = new Date().toISOString().split('T')[0];
-          const nextYear = new Date();
-          nextYear.setFullYear(nextYear.getFullYear() + 1);
-          
-          const dateEmission = document.getElementById('dateEmission');
-          if (dateEmission) dateEmission.value = today;
-          
-          const dateExpiration = document.getElementById('dateExpiration');
-          if (dateExpiration) dateExpiration.value = nextYear.toISOString().split('T')[0];
-          
-          const statut = document.getElementById('statut');
-          if (statut) statut.value = 'active';
-          
-          const categorie = document.getElementById('categorie');
-          if (categorie) categorie.value = 'senior';
-        }
-      };
-
-      // Gestion des licences AVEC SUPABASE
-      const LicenceManager = {
-        async load() {
-          try {
-            if (AppState.useOfflineMode) {
-              console.log('📂 Mode offline - données locales');
-              AppState.licences = Utils.getFromStorage('licences', []);
-              this.updateDataSource('Local (hors ligne)');
-            } else {
-              console.log('📡 Chargement depuis Supabase...');
-              
-              const { data, error } = await AppState.supabaseClient
-                .from('licences')
-                .select('*')
-                .order('nom', { ascending: true });
-              
-              if (error) throw error;
-              
-              AppState.licences = data || [];
-              this.updateDataSource('Base de données Supabase');
-              console.log('✅ Licences chargées depuis DB:', AppState.licences.length);
-            }
-            
-            this.render();
-            
-          } catch (error) {
-            console.error('❌ Erreur chargement licences:', error);
-            Utils.showToast('Erreur chargement des licences', 'error');
-            
-            AppState.useOfflineMode = true;
-            AppState.licences = Utils.getFromStorage('licences', []);
-            this.updateDataSource('Local (erreur base)');
-            this.render();
-          }
-        },
-
-        updateDataSource(source) {
-          const dataSource = document.getElementById('dataSource');
-          if (dataSource) dataSource.textContent = source;
-        },
-
-        render() {
-          const tbody = document.getElementById('licencesTableBody');
-          const totalCount = document.getElementById('totalCount');
-          
-          if (totalCount) totalCount.textContent = AppState.licences.length;
-          if (!tbody) return;
-          
-          if (AppState.licences.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: #666;">Aucune licence trouvée</td></tr>';
-            return;
-          }
-          
-          tbody.innerHTML = AppState.licences.map(licence => `
-            <tr>
-              <td>${licence.nom || ''}</td>
-              <td>${licence.prenom || ''}</td>
-              <td><code>${licence.numeroLicence || licence.numero_licence || 'N/A'}</code></td>
-              <td><span class="status-${licence.statut}">${Utils.formatStatut(licence.statut)}</span></td>
-              <td>${licence.categorie || ''}</td>
-              <td>${licence.dateExpiration || licence.date_expiration ? Utils.formatDate(licence.dateExpiration || licence.date_expiration) : 'N/A'}</td>
-              <td>
-                <button class="btn btn-sm btn-danger" onclick="LicenceManager.delete('${licence.id}')">
-                  🗑️ Supprimer
-                </button>
-              </td>
-            </tr>
-          `).join('');
-        },
-
-        async add(licenceData) {
-          licenceData.id = Utils.generateId();
-          if (!licenceData.numeroLicence) {
-            licenceData.numeroLicence = Utils.generateLicenceNumber();
-          }
-          
-          try {
-            if (AppState.useOfflineMode) {
-              AppState.licences.push(licenceData);
-              Utils.saveToStorage('licences', AppState.licences);
-            } else {
-              const { data, error } = await AppState.supabaseClient
-                .from('licences')
-                .insert([licenceData])
-                .select()
-                .single();
-              
-              if (error) throw error;
-              AppState.licences.push(data);
-            }
-            
-            this.render();
-            Utils.showToast('Licence créée avec succès', 'success');
-            
-          } catch (error) {
-            console.error('❌ Erreur création licence:', error);
-            Utils.showToast('Erreur lors de la création', 'error');
-          }
-        },
-
-        async delete(licenceId) {
-          if (!confirm('Êtes-vous sûr de vouloir supprimer cette licence ?')) return;
-          
-          try {
-            if (AppState.useOfflineMode) {
-              AppState.licences = AppState.licences.filter(l => l.id !== licenceId);
-              Utils.saveToStorage('licences', AppState.licences);
-            } else {
-              const { error } = await AppState.supabaseClient
-                .from('licences')
-                .delete()
-                .eq('id', licenceId);
-              
-              if (error) throw error;
-              AppState.licences = AppState.licences.filter(l => l.id !== licenceId);
-            }
-            
-            this.render();
-            Utils.showToast('Licence supprimée', 'success');
-            
-          } catch (error) {
-            console.error('❌ Erreur suppression:', error);
-            Utils.showToast('Erreur lors de la suppression', 'error');
-          }
-        }
-      };
-
-      // Gestion de l'authentification
-      const AuthManager = {
-        async login(login, password) {
-          try {
-            let user = null;
-            
-            if (!AppState.useOfflineMode && AppState.supabaseClient) {
-              try {
-                const { data, error } = await AppState.supabaseClient
-                  .from('users')
-                  .select('*')
-                  .eq('login', login)
-                  .eq('password', password)
-                  .single();
-                
-                if (!error && data) {
-                  user = data;
-                }
-              } catch (dbError) {
-                console.warn('Erreur auth DB, fallback admin:', dbError);
-              }
-            }
-            
-            if (!user && login === 'admin' && password === 'admin') {
-              user = { 
-                id: 1, 
-                login: 'admin', 
-                nom: 'Administrateur', 
-                role: 'admin' 
-              };
-            }
-            
-            if (user) {
-              AppState.currentUser = user;
-              Utils.setCookie('session_user', btoa(JSON.stringify(user)), 7);
-              Utils.showToast('Connexion réussie', 'success');
-              this.showAppPage();
-              await LicenceManager.load();
-              return true;
-            } else {
-              Utils.showToast('Identifiants incorrects', 'error');
-              return false;
-            }
-            
-          } catch (error) {
-            console.error('❌ Erreur connexion:', error);
-            Utils.showToast('Erreur de connexion', 'error');
-            return false;
-          }
-        },
-
-        logout() {
-          AppState.currentUser = null;
-          Utils.deleteCookie('session_user');
-          ModalManager.close();
-          this.showLoginPage();
-          Utils.showToast('Déconnexion réussie', 'success');
-        },
-
-        showLoginPage() {
-          document.getElementById('loginPage').classList.remove('hidden');
-          document.getElementById('appPage').classList.add('hidden');
-        },
-
-        showAppPage() {
-          document.getElementById('loginPage').classList.add('hidden');
-          document.getElementById('appPage').classList.remove('hidden');
-          
-          if (AppState.currentUser) {
-            const userDisplay = document.getElementById('userDisplay');
-            if (userDisplay) {
-              userDisplay.textContent = AppState.currentUser.nom || AppState.currentUser.login;
-            }
-          }
-        },
-
-        async checkSession() {
-          const sessionData = Utils.getCookie('session_user');
-          if (sessionData) {
-            try {
-              AppState.currentUser = JSON.parse(atob(sessionData));
-              this.showAppPage();
-              await LicenceManager.load();
-            } catch (error) {
-              console.warn('Session corrompue');
-              Utils.deleteCookie('session_user');
-            }
-          }
-        }
-      };
-
-      // Initialisation complète
-      document.addEventListener('DOMContentLoaded', async function() {
-        console.log('🚀 Initialisation app avec base de données');
-        
-        // S'assurer que la modal est fermée
-        const modal = document.getElementById('licenceModal');
-        if (modal) {
-          modal.classList.add('hidden');
-          modal.style.display = 'none';
-          AppState.isModalOpen = false;
-        }
-
-        // Initialiser Supabase
-        await initSupabase();
-
-        // Événements
-        document.getElementById('loginForm')?.addEventListener('submit', async function(e) {
-          e.preventDefault();
-          const login = document.getElementById('login').value;
-          const password = document.getElementById('password').value;
-          await AuthManager.login(login, password);
-        });
-
-        document.getElementById('logoutBtn')?.addEventListener('click', function(e) {
-          e.preventDefault();
-          AuthManager.logout();
-        });
-
-        document.getElementById('addLicenceBtn')?.addEventListener('click', function(e) {
-          e.preventDefault();
-          ModalManager.open();
-        });
-
-        document.getElementById('refreshBtn')?.addEventListener('click', async function(e) {
-          e.preventDefault();
-          await LicenceManager.load();
-          Utils.showToast('Données actualisées', 'success');
-        });
-
-        document.querySelector('.modal-close')?.addEventListener('click', function(e) {
-          e.preventDefault();
-          ModalManager.close();
-        });
-
-        document.getElementById('cancelBtn')?.addEventListener('click', function(e) {
-          e.preventDefault();
-          ModalManager.close();
-        });
-
-        document.getElementById('licenceForm')?.addEventListener('submit', async function(e) {
-          e.preventDefault();
-          if (!AppState.isModalOpen) return;
-          
-          const formData = new FormData(e.target);
-          const licenceData = Object.fromEntries(formData.entries());
-          
-          await LicenceManager.add(licenceData);
-          ModalManager.close();
-        });
-
-        // Fermer modal - extérieur
-        modal?.addEventListener('click', function(e) {
-          if (e.target === modal && AppState.isModalOpen) {
-            ModalManager.close();
-          }
-        });
-
-        // Fermer modal - Echap
-        document.addEventListener('keydown', function(e) {
-          if (e.key === 'Escape' && AppState.isModalOpen) {
-            ModalManager.close();
-          }
-        });
-
-        // Vérifier session
-        await AuthManager.checkSession();
-        
-        console.log('✅ App initialisée avec succès - Base de données connectée');
       });
-
-      // Export global pour debug
-      window.AppState = AppState;
-      window.ModalManager = ModalManager;
-      window.LicenceManager = LicenceManager;
-      window.AuthManager = AuthManager;
+      
+      // Gestion de la connexion
+      document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const username = document.getElementById('loginUser').value.trim();
+        const password = document.getElementById('loginPass').value;
+        
+        try {
+          const result = await window.licence2App.login(username, password);
+          
+          if (result.success) {
+            document.getElementById('loginPage').classList.add('hidden');
+            document.getElementById('mainApp').classList.remove('hidden');
+          }
+        } catch (error) {
+          console.error('Erreur de connexion:', error);
+          alert('Erreur de connexion: ' + error.message);
+        }
+      });
     </script>
   </body>
 </html>
