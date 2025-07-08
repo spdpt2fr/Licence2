@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Gestionnaire de Licences - FONCTIONNEL</title>
+    <title>Gestionnaire de Licences - BASE DE DONNÉES</title>
     <link rel="stylesheet" href="style.css" />
     <!-- Supabase CDN -->
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
@@ -12,7 +12,7 @@
     <!-- Page de connexion -->
     <div id="loginPage" class="login-page">
       <form id="loginForm" class="login-form">
-        <h2>Connexion - Version Fonctionnelle</h2>
+        <h2>Connexion - Base de Données</h2>
         <input id="loginUser" type="text" placeholder="Login" required />
         <input id="loginPass" type="password" placeholder="Mot de passe" required />
         <button type="submit" class="btn btn-primary">Se connecter</button>
@@ -49,6 +49,9 @@
             <button id="addLicenceBtn" class="btn btn-primary">
               ➕ Nouvelle licence
             </button>
+            <button id="refreshBtn" class="btn btn-secondary">
+              🔄 Actualiser
+            </button>
           </div>
         </div>
 
@@ -81,10 +84,13 @@
 
       // Initialisation
       document.addEventListener('DOMContentLoaded', async () => {
-        console.log('🚀 Initialisation...');
+        console.log('🚀 Initialisation avec BASE DE DONNÉES...');
         try {
           supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
           console.log('✅ Supabase initialisé');
+          
+          // Test de connexion obligatoire
+          await testDatabaseConnection();
           
           const sessionData = getStoredSession();
           if (sessionData) {
@@ -94,8 +100,31 @@
           }
         } catch (error) {
           console.error('❌ Erreur:', error);
+          showNotification('Erreur de connexion à la base de données', 'danger');
         }
       });
+
+      // Test de connexion base de données
+      async function testDatabaseConnection() {
+        try {
+          console.log('🔗 Test de connexion à la base de données...');
+          const { data, error, count } = await supabase
+            .from('licences')
+            .select('*', { count: 'exact' });
+          
+          if (error) {
+            console.error('❌ Erreur connexion base:', error);
+            throw new Error(`Erreur base de données: ${error.message}`);
+          }
+          
+          console.log(`✅ Connexion base réussie - ${count} licences trouvées`);
+          return { success: true, count };
+          
+        } catch (error) {
+          console.error('❌ Test connexion échoué:', error);
+          throw error;
+        }
+      }
 
       // Connexion
       document.getElementById('loginForm').addEventListener('submit', async (e) => {
@@ -131,44 +160,60 @@
         document.getElementById('addLicenceBtn').addEventListener('click', () => {
           showNotification('Fonctionnalité en développement', 'info');
         });
+        document.getElementById('refreshBtn').addEventListener('click', async () => {
+          await loadLicences();
+          showNotification('Données actualisées', 'success');
+        });
       }
 
       async function loadLicences() {
         try {
-          updateStatus('Chargement...', false);
-          const { data, error } = await supabase.from('licences').select('*').order('created_at', { ascending: false });
+          updateStatus('Chargement depuis la base...', false);
+          console.log('🔄 Chargement des licences depuis Supabase...');
+          
+          const { data, error } = await supabase
+            .from('licences')
+            .select('*')
+            .order('created_at', { ascending: false });
           
           if (error) {
-            licences = getTestData();
-            updateStatus('Mode hors ligne', false);
-          } else {
-            licences = data || [];
-            updateStatus('En ligne', true);
+            console.error('❌ Erreur Supabase:', error);
+            throw new Error(`Erreur base de données: ${error.message}`);
           }
+          
+          licences = data || [];
+          updateStatus(`Base de données connectée (${licences.length} licences)`, true);
+          
+          console.log(`✅ ${licences.length} licences chargées depuis la base`);
+          console.log('Première licence:', licences[0]);
           
           renderLicences();
           updateLicenceCount();
           checkExpirations();
-          console.log(`✅ ${licences.length} licences chargées`);
+          
         } catch (error) {
-          console.error('❌ Erreur:', error);
-          licences = getTestData();
+          console.error('❌ Erreur chargement:', error);
+          updateStatus('Erreur base de données', false);
+          showNotification(`Erreur: ${error.message}`, 'danger');
+          
+          // En cas d'erreur, afficher un tableau vide plutôt que des données de test
+          licences = [];
           renderLicences();
-          updateStatus('Mode hors ligne', false);
+          updateLicenceCount();
         }
-      }
-
-      function getTestData() {
-        return [
-          { id: 1, numero_licence: 'TEST-001', logiciel: 'Microsoft Office', version: '2023', date_expiration: '2024-12-31', prix: 299.99 },
-          { id: 2, numero_licence: 'TEST-002', logiciel: 'Adobe Creative Suite', version: '2024', date_expiration: '2024-08-15', prix: 599.99 },
-          { id: 3, numero_licence: 'TEST-003', logiciel: 'Windows Server', version: '2022', date_expiration: '2024-06-30', prix: 1299.99 }
-        ];
       }
 
       function renderLicences() {
         const tbody = document.getElementById('licenceTableBody');
         tbody.innerHTML = '';
+        
+        if (licences.length === 0) {
+          const row = document.createElement('tr');
+          row.innerHTML = '<td colspan="7" style="text-align: center; color: #666; padding: 20px;">Aucune licence trouvée dans la base de données</td>';
+          tbody.appendChild(row);
+          return;
+        }
+        
         licences.forEach(licence => {
           tbody.appendChild(createLicenceRow(licence));
         });
@@ -191,11 +236,11 @@
         
         row.className = statusClass;
         row.innerHTML = `
-          <td>${licence.numero_licence}</td>
-          <td>${licence.logiciel}</td>
-          <td>${licence.version}</td>
-          <td>${formatDate(licence.date_expiration)}</td>
-          <td>${formatPrice(licence.prix)}</td>
+          <td>${licence.numero_licence || licence.numeroLicence || 'N/A'}</td>
+          <td>${licence.logiciel || 'N/A'}</td>
+          <td>${licence.version || 'N/A'}</td>
+          <td>${formatDate(licence.date_expiration || licence.dateExpiration)}</td>
+          <td>${formatPrice(licence.prix || 0)}</td>
           <td>${statusText}</td>
           <td>
             <button class="btn-view" onclick="viewLicence(${licence.id})">👁️</button>
@@ -211,7 +256,7 @@
         let expiredCount = 0, warningCount = 0;
         
         licences.forEach(licence => {
-          const expiration = new Date(licence.date_expiration);
+          const expiration = new Date(licence.date_expiration || licence.dateExpiration);
           const daysUntilExpiration = Math.ceil((expiration - today) / (1000 * 60 * 60 * 24));
           
           if (daysUntilExpiration < 0) expiredCount++;
@@ -234,10 +279,12 @@
       }
 
       function formatDate(dateString) {
+        if (!dateString) return 'N/A';
         return new Date(dateString).toLocaleDateString('fr-FR');
       }
 
       function formatPrice(price) {
+        if (!price) return '0,00 €';
         return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(price);
       }
 
@@ -261,7 +308,7 @@
       function viewLicence(id) {
         const licence = licences.find(l => l.id === id);
         if (licence) {
-          alert(`Licence: ${licence.logiciel} ${licence.version}\\nNuméro: ${licence.numero_licence}\\nExpiration: ${formatDate(licence.date_expiration)}\\nPrix: ${formatPrice(licence.prix)}`);
+          alert(`Licence: ${licence.logiciel} ${licence.version}\\nNuméro: ${licence.numero_licence || licence.numeroLicence}\\nExpiration: ${formatDate(licence.date_expiration || licence.dateExpiration)}\\nPrix: ${formatPrice(licence.prix)}`);
         }
       }
 
