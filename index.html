@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Gestionnaire de Licences - CORRIGÉ</title>
+    <title>Gestionnaire de Licences - CRUD COMPLET</title>
     <link rel="stylesheet" href="style.css" />
     <!-- Supabase CDN -->
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
@@ -12,7 +12,7 @@
     <!-- Page de connexion -->
     <div id="loginPage" class="login-page">
       <form id="loginForm" class="login-form">
-        <h2>Connexion - Version Corrigée</h2>
+        <h2>Connexion - CRUD Complet</h2>
         <input id="loginUser" type="text" placeholder="Login" required />
         <input id="loginPass" type="password" placeholder="Mot de passe" required />
         <button type="submit" class="btn btn-primary">Se connecter</button>
@@ -77,21 +77,96 @@
       </div>
     </div>
 
+    <!-- Modal pour ajouter/éditer une licence -->
+    <div id="licenceModal" class="modal hidden">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 id="modalTitle">Nouvelle licence</h3>
+          <button id="closeModalBtn" class="close-btn">✕</button>
+        </div>
+        <form id="licenceForm" class="modal-body">
+          <div class="form-group">
+            <label for="software_name">Nom du logiciel *</label>
+            <input type="text" id="software_name" name="software_name" required />
+          </div>
+          
+          <div class="form-group">
+            <label for="vendor">Fournisseur *</label>
+            <input type="text" id="vendor" name="vendor" required />
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="version">Version</label>
+              <input type="text" id="version" name="version" />
+            </div>
+            
+            <div class="form-group">
+              <label for="type">Type *</label>
+              <select id="type" name="type" required>
+                <option value="">Sélectionner...</option>
+                <option value="perpetuelle">Perpétuelle</option>
+                <option value="subscription">Abonnement</option>
+                <option value="trial">Essai</option>
+                <option value="educational">Éducation</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="purchase_date">Date d'achat</label>
+              <input type="date" id="purchase_date" name="purchase_date" />
+            </div>
+            
+            <div class="form-group">
+              <label for="expiration_date">Date d'expiration</label>
+              <input type="date" id="expiration_date" name="expiration_date" />
+            </div>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="initial_cost">Prix (€)</label>
+              <input type="number" id="initial_cost" name="initial_cost" step="0.01" min="0" />
+            </div>
+            
+            <div class="form-group">
+              <label for="seats">Nombre de postes</label>
+              <input type="number" id="seats" name="seats" min="1" value="1" />
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="assigned_to">Assigné à</label>
+            <input type="text" id="assigned_to" name="assigned_to" placeholder="Nom d'utilisateur ou équipe" />
+          </div>
+          
+          <div class="modal-footer">
+            <button type="button" id="cancelBtn" class="btn btn-secondary">Annuler</button>
+            <button type="submit" id="saveBtn" class="btn btn-primary">
+              <span id="saveText">Créer</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
     <script>
-      // Configuration Supabase - API KEY CORRIGÉE
+      // Configuration Supabase
       const SUPABASE_URL = 'https://qsbdzyhxppdbtsikhozp.supabase.co';
       const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFzYmR6eWh4cHBkYnRzaWtob3pwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE0NzI5OTYsImV4cCI6MjA2NzA0ODk5Nn0.kanu7GfIr-qDtd3wcSmDbjEMK9VYX4o9HdG4cD0rcus';
       
       let supabase, currentUser = null, licences = [], sortDirection = {};
+      let editingLicenceId = null;
 
       // Initialisation
       document.addEventListener('DOMContentLoaded', async () => {
-        console.log('🚀 Initialisation avec MAPPING CORRIGÉ...');
+        console.log('🚀 Initialisation avec CRUD COMPLET...');
         try {
           supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
           console.log('✅ Supabase initialisé');
           
-          // Test de connexion obligatoire
           await testDatabaseConnection();
           
           const sessionData = getStoredSession();
@@ -106,7 +181,6 @@
         }
       });
 
-      // Test de connexion base de données
       async function testDatabaseConnection() {
         try {
           console.log('🔗 Test de connexion à la base de données...');
@@ -120,9 +194,7 @@
           }
           
           console.log(`✅ Connexion base réussie - ${count} licences trouvées`);
-          console.log('📊 Structure des données:', data[0] ? Object.keys(data[0]) : 'Aucune donnée');
           return { success: true, count };
-          
         } catch (error) {
           console.error('❌ Test connexion échoué:', error);
           throw error;
@@ -154,19 +226,151 @@
       }
 
       function setupEventListeners() {
+        // Boutons principaux
         document.getElementById('logoutBtn').addEventListener('click', () => {
           if (confirm('Déconnexion ?')) logout();
         });
+        
         document.getElementById('searchInput').addEventListener('input', (e) => {
           filterLicences(e.target.value);
         });
+        
+        // NOUVELLE LICENCE - FONCTIONNEL
         document.getElementById('addLicenceBtn').addEventListener('click', () => {
-          showNotification('Fonctionnalité en développement', 'info');
+          openLicenceModal();
         });
+        
         document.getElementById('refreshBtn').addEventListener('click', async () => {
           await loadLicences();
           showNotification('Données actualisées', 'success');
         });
+
+        // Modal events
+        document.getElementById('closeModalBtn').addEventListener('click', closeLicenceModal);
+        document.getElementById('cancelBtn').addEventListener('click', closeLicenceModal);
+        
+        // Formulaire de licence
+        document.getElementById('licenceForm').addEventListener('submit', async (e) => {
+          e.preventDefault();
+          await saveLicence();
+        });
+
+        // Fermer modal en cliquant en dehors
+        document.getElementById('licenceModal').addEventListener('click', (e) => {
+          if (e.target.id === 'licenceModal') {
+            closeLicenceModal();
+          }
+        });
+      }
+
+      // CRUD - CREATE & UPDATE
+      async function saveLicence() {
+        try {
+          const formData = new FormData(document.getElementById('licenceForm'));
+          const licenceData = {
+            software_name: formData.get('software_name'),
+            vendor: formData.get('vendor'),
+            version: formData.get('version') || null,
+            type: formData.get('type'),
+            purchase_date: formData.get('purchase_date') || null,
+            expiration_date: formData.get('expiration_date') || null,
+            initial_cost: parseFloat(formData.get('initial_cost')) || 0,
+            seats: parseInt(formData.get('seats')) || 1,
+            assigned_to: formData.get('assigned_to') || null
+          };
+
+          console.log('💾 Sauvegarde licence:', licenceData);
+
+          let result;
+          if (editingLicenceId) {
+            // UPDATE
+            licenceData.updated_at = new Date().toISOString();
+            result = await supabase
+              .from('licences')
+              .update(licenceData)
+              .eq('id', editingLicenceId);
+            
+            if (result.error) throw result.error;
+            showNotification('Licence mise à jour avec succès !', 'success');
+          } else {
+            // CREATE
+            licenceData.created_at = new Date().toISOString();
+            licenceData.updated_at = new Date().toISOString();
+            result = await supabase
+              .from('licences')
+              .insert([licenceData]);
+            
+            if (result.error) throw result.error;
+            showNotification('Nouvelle licence créée avec succès !', 'success');
+          }
+
+          closeLicenceModal();
+          await loadLicences();
+
+        } catch (error) {
+          console.error('❌ Erreur sauvegarde:', error);
+          showNotification(`Erreur: ${error.message}`, 'danger');
+        }
+      }
+
+      // CRUD - DELETE
+      async function deleteLicence(id) {
+        if (!confirm('Êtes-vous sûr de vouloir supprimer cette licence ?')) return;
+        
+        try {
+          console.log('🗑️ Suppression licence ID:', id);
+          
+          const result = await supabase
+            .from('licences')
+            .delete()
+            .eq('id', id);
+          
+          if (result.error) throw result.error;
+          
+          showNotification('Licence supprimée avec succès !', 'success');
+          await loadLicences();
+          
+        } catch (error) {
+          console.error('❌ Erreur suppression:', error);
+          showNotification(`Erreur: ${error.message}`, 'danger');
+        }
+      }
+
+      // Modal Management
+      function openLicenceModal(licence = null) {
+        editingLicenceId = licence ? licence.id : null;
+        
+        if (licence) {
+          // Mode édition
+          document.getElementById('modalTitle').textContent = 'Modifier la licence';
+          document.getElementById('saveText').textContent = 'Mettre à jour';
+          
+          // Remplir le formulaire
+          document.getElementById('software_name').value = licence.software_name || '';
+          document.getElementById('vendor').value = licence.vendor || '';
+          document.getElementById('version').value = licence.version || '';
+          document.getElementById('type').value = licence.type || '';
+          document.getElementById('purchase_date').value = licence.purchase_date || '';
+          document.getElementById('expiration_date').value = licence.expiration_date || '';
+          document.getElementById('initial_cost').value = licence.initial_cost || '';
+          document.getElementById('seats').value = licence.seats || 1;
+          document.getElementById('assigned_to').value = licence.assigned_to || '';
+        } else {
+          // Mode création
+          document.getElementById('modalTitle').textContent = 'Nouvelle licence';
+          document.getElementById('saveText').textContent = 'Créer';
+          document.getElementById('licenceForm').reset();
+          document.getElementById('seats').value = 1;
+        }
+        
+        document.getElementById('licenceModal').classList.remove('hidden');
+        document.getElementById('software_name').focus();
+      }
+
+      function closeLicenceModal() {
+        document.getElementById('licenceModal').classList.add('hidden');
+        document.getElementById('licenceForm').reset();
+        editingLicenceId = null;
       }
 
       async function loadLicences() {
@@ -188,18 +392,6 @@
           updateStatus(`Base de données connectée (${licences.length} licences)`, true);
           
           console.log(`✅ ${licences.length} licences chargées depuis la base`);
-          if (licences.length > 0) {
-            console.log('📋 Première licence avec mapping corrigé:', {
-              id: licences[0].id,
-              logiciel: licences[0].software_name,
-              fournisseur: licences[0].vendor,
-              version: licences[0].version,
-              type: licences[0].type,
-              expiration: licences[0].expiration_date,
-              prix: licences[0].initial_cost,
-              postes: licences[0].seats
-            });
-          }
           
           renderLicences();
           updateLicenceCount();
@@ -323,12 +515,17 @@
       function viewLicence(id) {
         const licence = licences.find(l => l.id === id);
         if (licence) {
-          alert(`Licence: ${licence.software_name} ${licence.version}\\nFournisseur: ${licence.vendor}\\nType: ${licence.type}\\nExpiration: ${formatDate(licence.expiration_date)}\\nPrix: ${formatPrice(licence.initial_cost)}\\nPostes: ${licence.seats}`);
+          alert(`Licence: ${licence.software_name} ${licence.version}\\nFournisseur: ${licence.vendor}\\nType: ${licence.type}\\nExpiration: ${formatDate(licence.expiration_date)}\\nPrix: ${formatPrice(licence.initial_cost)}\\nPostes: ${licence.seats}\\nAssigné à: ${licence.assigned_to || 'Non assigné'}`);
         }
       }
 
-      function editLicence(id) { showNotification('Édition en développement', 'info'); }
-      function deleteLicence(id) { if (confirm('Supprimer ?')) showNotification('Suppression en développement', 'info'); }
+      // ÉDITION - FONCTIONNELLE
+      function editLicence(id) {
+        const licence = licences.find(l => l.id === id);
+        if (licence) {
+          openLicenceModal(licence);
+        }
+      }
 
       function sortTable(column) {
         const direction = sortDirection[column] === 'asc' ? 'desc' : 'asc';
