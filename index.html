@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Gestionnaire de Licences - BASE DE DONNÉES</title>
+    <title>Gestionnaire de Licences - CORRIGÉ</title>
     <link rel="stylesheet" href="style.css" />
     <!-- Supabase CDN -->
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
@@ -12,7 +12,7 @@
     <!-- Page de connexion -->
     <div id="loginPage" class="login-page">
       <form id="loginForm" class="login-form">
-        <h2>Connexion - Base de Données</h2>
+        <h2>Connexion - Version Corrigée</h2>
         <input id="loginUser" type="text" placeholder="Login" required />
         <input id="loginPass" type="password" placeholder="Mot de passe" required />
         <button type="submit" class="btn btn-primary">Se connecter</button>
@@ -59,12 +59,14 @@
         <table class="licence-table">
           <thead>
             <tr>
-              <th onclick="sortTable('numero_licence')">N° Licence</th>
-              <th onclick="sortTable('logiciel')">Logiciel</th>
+              <th onclick="sortTable('id')">ID</th>
+              <th onclick="sortTable('software_name')">Logiciel</th>
+              <th onclick="sortTable('vendor')">Fournisseur</th>
               <th onclick="sortTable('version')">Version</th>
-              <th onclick="sortTable('date_expiration')">Expiration</th>
-              <th onclick="sortTable('prix')">Prix</th>
-              <th onclick="sortTable('statut')">Statut</th>
+              <th onclick="sortTable('type')">Type</th>
+              <th onclick="sortTable('expiration_date')">Expiration</th>
+              <th onclick="sortTable('initial_cost')">Prix</th>
+              <th onclick="sortTable('seats')">Postes</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -84,10 +86,10 @@
 
       // Initialisation
       document.addEventListener('DOMContentLoaded', async () => {
-        console.log('🚀 Initialisation avec VRAIE API KEY...');
+        console.log('🚀 Initialisation avec MAPPING CORRIGÉ...');
         try {
           supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-          console.log('✅ Supabase initialisé avec nouvelle API key');
+          console.log('✅ Supabase initialisé');
           
           // Test de connexion obligatoire
           await testDatabaseConnection();
@@ -118,7 +120,7 @@
           }
           
           console.log(`✅ Connexion base réussie - ${count} licences trouvées`);
-          console.log('📊 Données récupérées:', data);
+          console.log('📊 Structure des données:', data[0] ? Object.keys(data[0]) : 'Aucune donnée');
           return { success: true, count };
           
         } catch (error) {
@@ -187,7 +189,16 @@
           
           console.log(`✅ ${licences.length} licences chargées depuis la base`);
           if (licences.length > 0) {
-            console.log('📋 Première licence:', licences[0]);
+            console.log('📋 Première licence avec mapping corrigé:', {
+              id: licences[0].id,
+              logiciel: licences[0].software_name,
+              fournisseur: licences[0].vendor,
+              version: licences[0].version,
+              type: licences[0].type,
+              expiration: licences[0].expiration_date,
+              prix: licences[0].initial_cost,
+              postes: licences[0].seats
+            });
           }
           
           renderLicences();
@@ -199,7 +210,6 @@
           updateStatus('Erreur base de données', false);
           showNotification(`Erreur: ${error.message}`, 'danger');
           
-          // En cas d'erreur, afficher un tableau vide plutôt que des données de test
           licences = [];
           renderLicences();
           updateLicenceCount();
@@ -212,7 +222,7 @@
         
         if (licences.length === 0) {
           const row = document.createElement('tr');
-          row.innerHTML = '<td colspan="7" style="text-align: center; color: #666; padding: 20px;">Aucune licence trouvée dans la base de données</td>';
+          row.innerHTML = '<td colspan="9" style="text-align: center; color: #666; padding: 20px;">Aucune licence trouvée dans la base de données</td>';
           tbody.appendChild(row);
           return;
         }
@@ -225,7 +235,7 @@
       function createLicenceRow(licence) {
         const row = document.createElement('tr');
         const today = new Date();
-        const expiration = new Date(licence.date_expiration || licence.dateExpiration);
+        const expiration = new Date(licence.expiration_date);
         const daysUntilExpiration = Math.ceil((expiration - today) / (1000 * 60 * 60 * 24));
         
         let statusClass = '', statusText = 'Active';
@@ -239,12 +249,14 @@
         
         row.className = statusClass;
         row.innerHTML = `
-          <td>${licence.numero_licence || licence.numeroLicence || 'N/A'}</td>
-          <td>${licence.logiciel || 'N/A'}</td>
+          <td>#${licence.id}</td>
+          <td>${licence.software_name || 'N/A'}</td>
+          <td>${licence.vendor || 'N/A'}</td>
           <td>${licence.version || 'N/A'}</td>
-          <td>${formatDate(licence.date_expiration || licence.dateExpiration)}</td>
-          <td>${formatPrice(licence.prix || 0)}</td>
-          <td>${statusText}</td>
+          <td><span class="badge">${licence.type || 'N/A'}</span></td>
+          <td>${formatDate(licence.expiration_date)}</td>
+          <td>${formatPrice(licence.initial_cost)}</td>
+          <td>${licence.seats || 0} poste(s)</td>
           <td>
             <button class="btn-view" onclick="viewLicence(${licence.id})">👁️</button>
             <button class="btn-edit" onclick="editLicence(${licence.id})">✏️</button>
@@ -259,7 +271,7 @@
         let expiredCount = 0, warningCount = 0;
         
         licences.forEach(licence => {
-          const expiration = new Date(licence.date_expiration || licence.dateExpiration);
+          const expiration = new Date(licence.expiration_date);
           const daysUntilExpiration = Math.ceil((expiration - today) / (1000 * 60 * 60 * 24));
           
           if (daysUntilExpiration < 0) expiredCount++;
@@ -287,7 +299,7 @@
       }
 
       function formatPrice(price) {
-        if (!price) return '0,00 €';
+        if (!price && price !== 0) return 'N/A';
         return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(price);
       }
 
@@ -311,7 +323,7 @@
       function viewLicence(id) {
         const licence = licences.find(l => l.id === id);
         if (licence) {
-          alert(`Licence: ${licence.logiciel} ${licence.version}\\nNuméro: ${licence.numero_licence || licence.numeroLicence}\\nExpiration: ${formatDate(licence.date_expiration || licence.dateExpiration)}\\nPrix: ${formatPrice(licence.prix)}`);
+          alert(`Licence: ${licence.software_name} ${licence.version}\\nFournisseur: ${licence.vendor}\\nType: ${licence.type}\\nExpiration: ${formatDate(licence.expiration_date)}\\nPrix: ${formatPrice(licence.initial_cost)}\\nPostes: ${licence.seats}`);
         }
       }
 
@@ -324,9 +336,16 @@
         
         licences.sort((a, b) => {
           let aVal = a[column] || '', bVal = b[column] || '';
-          if (column === 'prix') { aVal = parseFloat(aVal); bVal = parseFloat(bVal); }
-          else if (column === 'date_expiration') { aVal = new Date(aVal); bVal = new Date(bVal); }
-          else { aVal = aVal.toString().toLowerCase(); bVal = bVal.toString().toLowerCase(); }
+          if (column === 'initial_cost' || column === 'seats') { 
+            aVal = parseFloat(aVal) || 0; 
+            bVal = parseFloat(bVal) || 0; 
+          } else if (column === 'expiration_date') { 
+            aVal = new Date(aVal); 
+            bVal = new Date(bVal); 
+          } else { 
+            aVal = aVal.toString().toLowerCase(); 
+            bVal = bVal.toString().toLowerCase(); 
+          }
           return direction === 'asc' ? (aVal > bVal ? 1 : -1) : (aVal < bVal ? 1 : -1);
         });
         renderLicences();
