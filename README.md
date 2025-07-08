@@ -1,62 +1,97 @@
-# Licence2 v2.0 - Gestionnaire de Licences Modulaire
+# 🚀 Licence2 v3.0 - Architecture Modulaire
 
-> 🖥️ Application moderne de gestion des licences logicielles avec architecture modulaire
+**Gestionnaire de licences logicielles avec architecture moderne et modulaire**
 
-## 🎯 Version 2.0 - Architecture Modulaire
-
-**Optimisation :** -28% de taille (40KB vs 56KB)  
-**Maintenabilité :** +300% avec 17 modules spécialisés  
-**Performance :** Chargement < 2s, interaction < 3s
-
-## ✨ Fonctionnalités Principales
-
-- **🔐 Authentification multi-utilisateurs** (lecture, écriture, admin)
-- **📋 CRUD complet des licences** avec validation temps réel
-- **📊 Import/Export CSV/JSON** avec parser robuste
-- **🔍 Recherche et filtres avancés** instantanés
-- **⚡ Mode hors ligne** avec synchronisation automatique
-- **🎨 Interface responsive** avec thème sombre
-- **♿ Accessibilité WCAG 2.1 AA** complète
-
-## 🏗️ Architecture Technique
-
-```
-📁 src/
-├── utils/           # Validation, formatage, helpers (7KB)
-├── services/        # Auth, CRUD, export, notifications (16KB)  
-├── components/      # UI modulaires et réutilisables (17KB)
-├── styles/          # CSS modulaire avec thèmes (8KB)
-└── main.js          # Orchestrateur principal (3KB)
-```
-
-## 🚀 Démarrage Rapide
-
-1. **Configuration Supabase** dans `config.js`
-2. **Créer les tables** SQL (voir documentation)
-3. **Servir l'application** : `python -m http.server 8000`
-4. **Connexion initiale** : Admin/Admin
-
-## 📱 Démo Live
-
-🌐 **[Démo en ligne](https://licenceskay.netlify.app)** - Testez immédiatement
-
-## 🔧 Pour les Développeurs
-
-- **Mode debug automatique** en local
-- **Raccourcis clavier** pour productivité
-- **Tests unitaires** possibles par module
-- **Documentation complète** des API
-
-## 📈 Améliorations v2.0
-
-| Aspect | v1.0 | v2.0 | Gain |
-|--------|------|------|------|
-| **Taille** | 56KB | 40KB | -28% |
-| **Fichiers** | 5 gros | 17 modules | +240% |
-| **Maintenabilité** | ⭐⭐ | ⭐⭐⭐⭐⭐ | +300% |
-| **Performance** | Lente | Rapide | 2-3x |
-| **Tests** | Impossible | Unitaires | ∞ |
+[![Version](https://img.shields.io/badge/version-3.0.0-blue.svg)](https://github.com/spdpt2fr/Licence2)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Demo](https://img.shields.io/badge/demo-licenceskay.netlify.app-orange.svg)](https://licenceskay.netlify.app)
 
 ---
 
-**Licence :** MIT | **Auteur :** Équipe de développement | **Support :** Issues GitHub
+## ✨ **Nouvelles Fonctionnalités v3.0**
+
+### 🏗️ **Architecture Modulaire**
+- **Structure organisée** par responsabilités
+- **Composants réutilisables** et maintenables
+- **API Layer** avec gestion offline intelligente
+- **Configuration centralisée** et extensible
+
+### 🎯 **Améliorations Techniques**
+- **ES6 Modules** pour une meilleure organisation
+- **BaseAPI** avec gestion d'erreurs centralisée
+- **Système d'événements** pour la communication inter-modules
+- **CSS modulaire** avec variables et thèmes
+
+### 🔧 **Outillage Développement**
+- **Scripts npm** pour dev, build, test, deploy
+- **Configuration Netlify** optimisée
+- **Structure de tests** organisée
+- **Documentation** technique complète
+
+---
+
+## 📁 **Structure du Projet v3.0**
+
+```
+Licence2/
+├── 📁 public/                  # Point d'entrée et assets
+│   ├── index.html             # Interface principale v3.0
+│   ├── manifest.json          # PWA manifest
+│   └── favicon.ico            # Icône application
+│
+├── 📁 src/                    # Code source modulaire
+│   ├── 📁 config/             # Configuration centralisée
+│   │   ├── app.config.js      # Config application
+│   │   ├── supabase.config.js # Config Supabase
+│   │   └── constants.js       # Constantes globales
+│   │
+│   ├── 📁 core/               # Logique métier
+│   │   ├── 📁 api/            # Couche API
+│   │   │   ├── base.js        # BaseAPI commune
+│   │   │   ├── licences.js    # API Licences
+│   │   │   └── users.js       # API Utilisateurs
+│   │   │
+│   │   ├── 📁 auth/           # Authentification
+│   │   │   ├── auth.js        # Classe Auth
+│   │   │   ├── permissions.js # Gestion rôles
+│   │   │   └── session.js     # Sessions
+│   │   │
+│   │   └── 📁 utils/          # Utilitaires
+│   │       ├── csv.js         # Import/Export CSV
+│   │       ├── validators.js  # Validation
+│   │       └── helpers.js     # Fonctions helper
+│   │
+│   ├── 📁 components/         # Composants UI
+│   │   ├── header.js          # En-tête application
+│   │   ├── alerts.js          # Système alertes
+│   │   ├── licence-table.js   # Tableau licences
+│   │   ├── licence-form.js    # Formulaire licence
+│   │   └── user-form.js       # Formulaire utilisateur
+│   │
+│   ├── 📁 styles/             # Styles modulaires
+│   │   ├── base.css           # Reset + variables
+│   │   ├── components.css     # Styles composants
+│   │   ├── layout.css         # Grilles + responsive
+│   │   └── themes.css         # Thèmes (dark/light)
+│   │
+│   └── app.js                 # Point d'entrée principal
+│
+├── 📁 tests/                  # Tests organisés
+│   ├── 📁 unit/               # Tests unitaires
+│   ├── 📁 integration/        # Tests intégration
+│   └── 📁 e2e/                # Tests end-to-end
+│
+├── 📁 scripts/                # Automatisation
+│   ├── build.js               # Script build
+│   ├── deploy.js              # Script déploiement
+│   └── db-setup.js            # Setup Supabase
+│
+├── 📁 docs/                   # Documentation
+│   ├── ARCHITECTURE.md        # Documentation technique
+│   ├── API.md                 # Documentation API
+│   └── CONTRIBUTING.md        # Guide contribution
+│
+└── 📁 archive/                # Legacy (v1/v2)
+    ├── index-old.html         # Ancienne interface
+    └── TRANSFORMATION.md      # Historique migration
+```
