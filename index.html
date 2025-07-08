@@ -76,18 +76,18 @@
     </div>
 
     <script>
-      // Configuration Supabase
+      // Configuration Supabase - API KEY CORRIGÉE
       const SUPABASE_URL = 'https://qsbdzyhxppdbtsikhozp.supabase.co';
-      const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFzYmR6eWh4cHBkYnRzaWtob3pwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE2OTEzNjMsImV4cCI6MjA2NzI2NzM2M30.9lPwP9oe8mvC3ZLYGUvjGJHCRhw5TcZgTd_sRXoP5aw';
+      const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFzYmR6eWh4cHBkYnRzaWtob3pwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE0NzI5OTYsImV4cCI6MjA2NzA0ODk5Nn0.kanu7GfIr-qDtd3wcSmDbjEMK9VYX4o9HdG4cD0rcus';
       
       let supabase, currentUser = null, licences = [], sortDirection = {};
 
       // Initialisation
       document.addEventListener('DOMContentLoaded', async () => {
-        console.log('🚀 Initialisation avec BASE DE DONNÉES...');
+        console.log('🚀 Initialisation avec VRAIE API KEY...');
         try {
           supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-          console.log('✅ Supabase initialisé');
+          console.log('✅ Supabase initialisé avec nouvelle API key');
           
           // Test de connexion obligatoire
           await testDatabaseConnection();
@@ -118,6 +118,7 @@
           }
           
           console.log(`✅ Connexion base réussie - ${count} licences trouvées`);
+          console.log('📊 Données récupérées:', data);
           return { success: true, count };
           
         } catch (error) {
@@ -185,7 +186,9 @@
           updateStatus(`Base de données connectée (${licences.length} licences)`, true);
           
           console.log(`✅ ${licences.length} licences chargées depuis la base`);
-          console.log('Première licence:', licences[0]);
+          if (licences.length > 0) {
+            console.log('📋 Première licence:', licences[0]);
+          }
           
           renderLicences();
           updateLicenceCount();
@@ -222,7 +225,7 @@
       function createLicenceRow(licence) {
         const row = document.createElement('tr');
         const today = new Date();
-        const expiration = new Date(licence.date_expiration);
+        const expiration = new Date(licence.date_expiration || licence.dateExpiration);
         const daysUntilExpiration = Math.ceil((expiration - today) / (1000 * 60 * 60 * 24));
         
         let statusClass = '', statusText = 'Active';
