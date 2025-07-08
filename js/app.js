@@ -62,7 +62,7 @@ window.App = {
         window.UIManager.init();
         console.log('✅ UIManager initialisé');
 
-        // 2. Initialiser l'authentification
+        // 2. Initialiser l'authentification (SANS charger les licences)
         window.AuthManager.init();
         console.log('✅ AuthManager initialisé');
 
@@ -74,11 +74,17 @@ window.App = {
             console.warn('⚠️ DatabaseManager initialisé en mode dégradé');
         }
 
-        // 4. Configurer les fonctions globales
+        // 4. Si l'utilisateur est déjà connecté, charger les licences MAINTENANT
+        if (window.AuthManager.isAuthenticated()) {
+            console.log('🔄 Utilisateur connecté - Chargement des licences...');
+            await window.DatabaseManager.loadLicences();
+        }
+
+        // 5. Configurer les fonctions globales
         this.setupGlobalFunctions();
         console.log('✅ Fonctions globales configurées');
 
-        // 5. Configurer les raccourcis clavier
+        // 6. Configurer les raccourcis clavier
         this.setupKeyboardShortcuts();
         console.log('✅ Raccourcis clavier configurés');
     },
