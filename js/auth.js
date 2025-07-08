@@ -29,7 +29,7 @@ window.AuthManager = {
         if (sessionData) {
             window.AppState.currentUser = sessionData;
             window.UIManager.showApp();
-            window.DatabaseManager.loadLicences();
+            // NE PAS charger les licences ici - sera fait après l'init de DatabaseManager
         }
     },
 
@@ -52,7 +52,12 @@ window.AuthManager = {
             window.AppState.currentUser = user;
             this.storeSession(user);
             window.UIManager.showApp();
-            await window.DatabaseManager.loadLicences();
+            
+            // Charger les licences seulement si DatabaseManager est prêt
+            if (window.AppState.supabase) {
+                await window.DatabaseManager.loadLicences();
+            }
+            
             window.UIManager.showNotification(window.AppConfig.MESSAGES.LOGIN_SUCCESS, 'success');
         } else {
             window.UIManager.showNotification(window.AppConfig.MESSAGES.LOGIN_ERROR, 'danger');
