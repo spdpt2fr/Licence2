@@ -1,5 +1,5 @@
 /**
- * Application principale - Point d'entrée modulaire v3.0
+ * Application principale - Point d'entrée modulaire v3.0 (VERSION CORRIGÉE)
  * Orchestration des modules et composants
  */
 
@@ -10,7 +10,7 @@ import { EVENTS } from './config/constants.js';
 import LicencesAPI from './core/api/licences.js';
 import UsersAPI from './core/api/users.js';
 
-import HeaderComponent from './components/header.js';
+// CORRECTION: Utiliser les composants qui existent réellement
 import AlertsComponent from './components/alerts.js';
 import LicenceTableComponent from './components/licence-table.js';
 
@@ -29,7 +29,6 @@ export class Licence2App {
     this.usersAPI = new UsersAPI();
     
     // Composants UI
-    this.headerComponent = null;
     this.alertsComponent = null;
     this.tableComponent = null;
     
@@ -127,11 +126,10 @@ export class Licence2App {
    */
   async initializeUI() {
     try {
-      // Initialiser les composants
-      const headerContainer = document.querySelector('#headerContainer') || document.body;
-      this.headerComponent = new HeaderComponent(headerContainer);
-      this.headerComponent.setCurrentUser(this.currentUser);
+      // Créer un header simple en HTML
+      this.createSimpleHeader();
 
+      // Initialiser les composants qui existent
       const alertsContainer = document.querySelector('#alertsContainer') || document.body;
       this.alertsComponent = new AlertsComponent(alertsContainer);
 
@@ -143,6 +141,41 @@ export class Licence2App {
     } catch (error) {
       console.error('❌ Erreur initialisation UI:', error);
       throw error;
+    }
+  }
+
+  /**
+   * Créer un header simple en HTML pur
+   */
+  createSimpleHeader() {
+    const headerContainer = document.querySelector('#headerContainer');
+    if (headerContainer) {
+      headerContainer.innerHTML = `
+        <div class="header-v3">
+          <div class="header-left">
+            <h1>Licence2 v3.0</h1>
+          </div>
+          <div class="header-center">
+            <div class="status-display">
+              <span class="status-indicator online"></span>
+              <span class="status-text">En ligne</span>
+            </div>
+          </div>
+          <div class="header-right">
+            <div class="user-info">
+              <span class="user-name">${this.currentUser?.login || 'Utilisateur'}</span>
+              <span class="user-role">(${this.currentUser?.role || 'user'})</span>
+            </div>
+            <button id="logoutBtn" class="btn btn-secondary">Déconnexion</button>
+          </div>
+        </div>
+      `;
+
+      // Ajouter l'événement de déconnexion
+      const logoutBtn = document.getElementById('logoutBtn');
+      if (logoutBtn) {
+        logoutBtn.addEventListener('click', () => this.logout());
+      }
     }
   }
 
@@ -182,12 +215,29 @@ export class Licence2App {
     if (this.tableComponent) {
       this.tableComponent.updateLicences(this.licences);
     }
+
+    // Mettre à jour le statut dans le header simple
+    this.updateConnectionStatus({
+      online: !this.licencesAPI.useOfflineMode,
+      licencesCount: this.licences.length
+    });
+  }
+
+  /**
+   * Met à jour le statut de connexion dans le header
+   */
+  updateConnectionStatus(status) {
+    const statusIndicator = document.querySelector('.status-indicator');
+    const statusText = document.querySelector('.status-text');
     
-    if (this.headerComponent) {
-      this.headerComponent.updateConnectionStatus({
-        online: !this.licencesAPI.useOfflineMode,
-        licencesCount: this.licences.length
-      });
+    if (statusIndicator) {
+      statusIndicator.className = `status-indicator ${status.online ? 'online' : 'offline'}`;
+    }
+    
+    if (statusText) {
+      statusText.textContent = status.online ? 
+        `En ligne (${status.licencesCount} licences)` : 
+        `Hors ligne (${status.licencesCount} licences)`;
     }
   }
 
@@ -195,8 +245,6 @@ export class Licence2App {
    * Affiche l'interface de connexion
    */
   showLoginInterface() {
-    // Ici on pourrait créer un composant de login
-    // Pour l'instant, utiliser l'interface existante dans index.html
     console.log('👤 Affichage interface de connexion');
   }
 
@@ -240,10 +288,10 @@ export class Licence2App {
     this.storeSession(userInfo);
     
     // Initialiser l'UI si pas encore fait
-    if (!this.headerComponent) {
+    if (!this.alertsComponent) {
       await this.initializeUI();
     } else {
-      this.headerComponent.setCurrentUser(this.currentUser);
+      this.createSimpleHeader(); // Rafraîchir le header avec les nouvelles infos
       this.tableComponent.setCurrentUser(this.currentUser);
     }
     
@@ -332,14 +380,18 @@ export class Licence2App {
    * Déconnecte l'utilisateur
    */
   logout() {
-    this.onUserLogout();
+    const confirmed = confirm('Êtes-vous sûr de vouloir vous déconnecter ?');
+    if (confirmed) {
+      this.onUserLogout();
+      // Recharger la page pour revenir à l'écran de connexion
+      setTimeout(() => window.location.reload(), 500);
+    }
   }
 
   /**
    * Détruit l'application
    */
   destroy() {
-    if (this.headerComponent) this.headerComponent.destroy();
     if (this.alertsComponent) this.alertsComponent.destroy();
     if (this.tableComponent) this.tableComponent.destroy();
   }
