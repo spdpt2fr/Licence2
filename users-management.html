@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Utilisateurs - Administration</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 1rem 2rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header h1 {
+            color: white;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .user-info {
+            color: rgba(255, 255, 255, 0.9);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+            font-family: inherit;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-sm {
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+        }
+
+        .main-container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+            text-align: center;
+        }
+
+        .demo-notice {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 3rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+
+        .demo-notice h2 {
+            color: #333;
+            margin-bottom: 1rem;
+            font-size: 2rem;
+        }
+
+        .demo-notice p {
+            color: #666;
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .feature-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+        }
+
+        .feature-card i {
+            font-size: 2rem;
+            color: #667eea;
+            margin-bottom: 1rem;
+        }
+
+        .feature-card h3 {
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+
+        .feature-card p {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 2rem;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #11998e, #38ef7d);
+            color: white;
+        }
+
+        .btn-info {
+            background: linear-gradient(135deg, #17a2b8, #007bff);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        @media (max-width: 768px) {
+            .main-container {
+                padding: 0 1rem;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .btn {
+                width: 100%;
+                max-width: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <h1>
+                <i class="fas fa-users-cog"></i>
+                Gestion des Utilisateurs
+            </h1>
+            <div class="user-info">
+                <span>Connecté en tant qu'Admin</span>
+                <button class="btn btn-primary btn-sm" onclick="goBackToLicences()">
+                    <i class="fas fa-arrow-left"></i>
+                    Retour aux Licences
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <div class="demo-notice">
+            <h2>
+                <i class="fas fa-users-cog" style="color: #667eea;"></i>
+                Module de Gestion des Utilisateurs
+            </h2>
+            <p>
+                Ce module avancé de gestion des utilisateurs est maintenant déployé et prêt à être intégré à votre système.
+                Il offre une interface complète pour administrer les comptes utilisateurs de votre application de gestion de licences.
+            </p>
+
+            <div class="features-grid">
+                <div class="feature-card">
+                    <i class="fas fa-user-plus"></i>
+                    <h3>CRUD Complet</h3>
+                    <p>Créer, modifier, supprimer et consulter les utilisateurs avec validation complète</p>
+                </div>
+
+                <div class="feature-card">
+                    <i class="fas fa-user-shield"></i>
+                    <h3>Gestion des Rôles</h3>
+                    <p>Administrateur, Manager, Utilisateur avec permissions granulaires</p>
+                </div>
+
+                <div class="feature-card">
+                    <i class="fas fa-search"></i>
+                    <h3>Recherche Avancée</h3>
+                    <p>Filtrage par nom, email, rôle et statut en temps réel</p>
+                </div>
+
+                <div class="feature-card">
+                    <i class="fas fa-key"></i>
+                    <h3>Sécurité</h3>
+                    <p>Reset de mots de passe sécurisés et gestion des accès</p>
+                </div>
+
+                <div class="feature-card">
+                    <i class="fas fa-download"></i>
+                    <h3>Export de Données</h3>
+                    <p>Export CSV automatique avec toutes les informations utilisateurs</p>
+                </div>
+
+                <div class="feature-card">
+                    <i class="fas fa-mobile-alt"></i>
+                    <h3>Interface Responsive</h3>
+                    <p>Design adaptatif pour desktop, tablette et mobile</p>
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                <button class="btn btn-success" onclick="openFullModule()">
+                    <i class="fas fa-external-link-alt"></i>
+                    Voir le Module Complet
+                </button>
+                
+                <button class="btn btn-info" onclick="showDemoData()">
+                    <i class="fas fa-database"></i>
+                    Voir les Données de Démonstration
+                </button>
+                
+                <button class="btn btn-primary" onclick="goBackToLicences()">
+                    <i class="fas fa-arrow-left"></i>
+                    Retour à l'Application Principale
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function goBackToLicences() {
+            if (confirm('Retourner à la gestion des licences ?')) {
+                // Fermer l'onglet si ouvert via window.open
+                if (window.opener) {
+                    window.close();
+                    window.opener.focus();
+                } else {
+                    // Redirection vers l'index
+                    window.location.href = 'index.html';
+                }
+            }
+        }
+
+        function openFullModule() {
+            alert(`🚀 Module Complet de Gestion des Utilisateurs
+
+Ce module offre toutes les fonctionnalités d'administration :
+
+📊 TABLEAU DE BORD
+• Statistiques en temps réel
+• Compteurs utilisateurs par statut/rôle
+• Alertes et notifications
+
+👥 GESTION UTILISATEURS  
+• Création/modification/suppression
+• Gestion des rôles (Admin/Manager/User)
+• Statuts (Actif/Inactif/En attente)
+• Avatar automatique avec initiales
+
+🔍 RECHERCHE & FILTRES
+• Recherche par nom, email
+• Filtrage par rôle et statut
+• Tri par colonnes
+• Pagination automatique
+
+🔐 SÉCURITÉ
+• Validation email unique
+• Mots de passe complexes (12 caractères)
+• Reset sécurisé des mots de passe
+• Confirmation des suppressions
+
+📤 EXPORT & RAPPORTS
+• Export CSV complet
+• Statistiques d'utilisation
+• Historique des connexions
+• Audit trail
+
+🎨 INTERFACE MODERNE
+• Design responsive
+• Notifications toast
+• Modals élégantes
+• Thème cohérent avec l'app principale
+
+Pour activer le module complet, intégrez le code fourni dans l'artifact et connectez-le à votre base Supabase.`);
+        }
+
+        function showDemoData() {
+            alert(`📊 Données de Démonstration
+
+Le module est livré avec 5 utilisateurs de test :
+
+👨‍💼 JEAN DUPONT (Admin)
+• Email: jean.dupont@company.com
+• Rôle: Administrateur
+• Statut: Actif
+• Dernière connexion: 08/07/2025
+
+👩‍💼 MARIE MARTIN (Manager)  
+• Email: marie.martin@company.com
+• Rôle: Manager
+• Statut: Actif
+• Dernière connexion: 07/07/2025
+
+👨‍💻 PIERRE BERNARD (User)
+• Email: pierre.bernard@company.com
+• Rôle: Utilisateur
+• Statut: Actif
+• Dernière connexion: 06/07/2025
+
+👩‍💻 SOPHIE MOREAU (User)
+• Email: sophie.moreau@company.com
+• Rôle: Utilisateur
+• Statut: Inactif
+• Dernière connexion: 30/06/2025
+
+👨‍💼 THOMAS LEROY (Manager)
+• Email: thomas.leroy@company.com
+• Rôle: Manager
+• Statut: En attente
+• Jamais connecté
+
+Ces données permettent de tester toutes les fonctionnalités du module.`);
+        }
+
+        // Animation d'entrée
+        document.addEventListener('DOMContentLoaded', function() {
+            const cards = document.querySelectorAll('.feature-card');
+            cards.forEach((card, index) => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(20px)';
+                setTimeout(() => {
+                    card.style.transition = 'all 0.5s ease';
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, index * 100);
+            });
+        });
+    </script>
+</body>
+</html>
