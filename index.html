@@ -7,6 +7,79 @@
     <link rel="stylesheet" href="style.css" />
     <!-- Supabase CDN -->
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+      /* Styles pour le menu administration */
+      .admin-menu {
+        display: none;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 0.75rem 1rem;
+        margin-bottom: 1rem;
+        border-radius: 8px;
+        align-items: center;
+        justify-content: space-between;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      }
+      
+      .admin-menu.visible {
+        display: flex;
+      }
+      
+      .admin-menu-title {
+        color: white;
+        font-weight: bold;
+        margin: 0;
+        font-size: 1rem;
+      }
+      
+      .admin-menu-buttons {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+      }
+      
+      .admin-btn {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        padding: 0.5rem 1rem;
+        border-radius: 5px;
+        text-decoration: none;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      
+      .admin-btn:hover {
+        background: rgba(255, 255, 255, 0.3);
+        border-color: rgba(255, 255, 255, 0.5);
+        color: white;
+        text-decoration: none;
+        transform: translateY(-1px);
+      }
+      
+      @media (max-width: 768px) {
+        .admin-menu {
+          flex-direction: column;
+          gap: 0.75rem;
+          text-align: center;
+        }
+        
+        .admin-menu-buttons {
+          justify-content: center;
+        }
+        
+        .admin-btn {
+          font-size: 0.8rem;
+          padding: 0.4rem 0.8rem;
+        }
+        
+        .admin-btn span.text {
+          display: none;
+        }
+      }
+    </style>
   </head>
   <body>
     <!-- Page de connexion -->
@@ -22,7 +95,7 @@
 
     <!-- Application principale -->
     <div id="mainApp" class="container hidden">
-      <!-- Header -->
+      <!-- Header --></div>
       <div class="app-header">
         <h1>Gestionnaire de Licences</h1>
         <div class="header-user">
@@ -32,6 +105,19 @@
           </div>
           <div class="current-user" id="currentUser">Utilisateur</div>
           <button id="logoutBtn" class="btn btn-secondary">Déconnexion</button>
+        </div>
+      </div>
+
+      <!-- Menu Administration (visible uniquement pour les admins) -->
+      <div id="adminMenu" class="admin-menu">
+        <h3 class="admin-menu-title">🛠️ Administration</h3>
+        <div class="admin-menu-buttons">
+          <a href="users-management.html" class="admin-btn">
+            👥 <span class="text">Utilisateurs</span>
+          </a>
+          <button class="admin-btn" onclick="showComingSoon()">
+            ⚙️ <span class="text">Paramètres</span>
+          </button>
         </div>
       </div>
 
@@ -222,6 +308,13 @@
         document.getElementById('loginPage').classList.add('hidden');
         document.getElementById('mainApp').classList.remove('hidden');
         document.getElementById('currentUser').textContent = `${currentUser.nom} (${currentUser.role})`;
+        
+        // Afficher le menu admin si l'utilisateur est administrateur
+        if (currentUser.role === 'admin') {
+          document.getElementById('adminMenu').classList.add('visible');
+          console.log('✅ Menu administration activé pour:', currentUser.nom);
+        }
+        
         setupEventListeners();
       }
 
@@ -261,6 +354,11 @@
             closeLicenceModal();
           }
         });
+      }
+
+      // Fonction pour le bouton Paramètres (à venir)
+      function showComingSoon() {
+        showNotification('Fonctionnalité à venir dans une prochaine version', 'info');
       }
 
       // CRUD - CREATE & UPDATE
@@ -570,6 +668,7 @@
         currentUser = null;
         document.getElementById('loginPage').classList.remove('hidden');
         document.getElementById('mainApp').classList.add('hidden');
+        document.getElementById('adminMenu').classList.remove('visible');
         document.getElementById('loginForm').reset();
         showNotification('Déconnexion réussie', 'info');
       }
