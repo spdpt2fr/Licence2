@@ -1,0 +1,479 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gestionnaire de Licences - FONCTIONNEL</title>
+    <link rel="stylesheet" href="style.css" />
+    <!-- Supabase CDN -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  </head>
+  <body>
+    <!-- Page de connexion -->
+    <div id="loginPage" class="login-page">
+      <form id="loginForm" class="login-form">
+        <h2>Connexion - Version Fonctionnelle</h2>
+        <input id="loginUser" type="text" placeholder="Login" required />
+        <input id="loginPass" type="password" placeholder="Mot de passe" required />
+        <button type="submit" class="btn btn-primary">Se connecter</button>
+        <p class="login-hint">Identifiants par défaut: <b>Admin/Admin</b></p>
+      </form>
+    </div>
+
+    <!-- Application principale -->
+    <div id="mainApp" class="container hidden">
+      <!-- Header -->
+      <div class="app-header">
+        <h1>Gestionnaire de Licences</h1>
+        <div class="header-user">
+          <div class="status-bar">
+            <div class="status-indicator" id="statusIndicator"></div>
+            <span id="statusText">Chargement...</span>
+          </div>
+          <div class="current-user" id="currentUser">Utilisateur</div>
+          <button id="logoutBtn" class="btn btn-secondary">Déconnexion</button>
+        </div>
+      </div>
+
+      <!-- Alertes -->
+      <div id="alertsContainer"></div>
+
+      <!-- Actions du tableau -->
+      <div class="table-container">
+        <div class="table-header">
+          <div class="table-actions">
+            <div class="search-container">
+              <input type="text" id="searchInput" placeholder="Rechercher une licence..." />
+              <div class="count" id="licenceCount">0 licence(s)</div>
+            </div>
+            <button id="addLicenceBtn" class="btn btn-primary">
+              ➕ Nouvelle licence
+            </button>
+          </div>
+        </div>
+
+        <!-- Tableau des licences -->
+        <table class="licence-table">
+          <thead>
+            <tr>
+              <th onclick="sortTable('numero')">N° Licence</th>
+              <th onclick="sortTable('logiciel')">Logiciel</th>
+              <th onclick="sortTable('version')">Version</th>
+              <th onclick="sortTable('dateExpiration')">Expiration</th>
+              <th onclick="sortTable('prix')">Prix</th>
+              <th onclick="sortTable('statut')">Statut</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="licenceTableBody">
+            <!-- Les licences seront injectées ici -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Script fonctionnel simple -->
+    <script>
+      // Configuration Supabase
+      const SUPABASE_URL = 'https://qsbdzyhxppdbtsikhozp.supabase.co';
+      const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFzYmR6eWh4cHBkYnRzaWtob3pwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE2OTEzNjMsImV4cCI6MjA2NzI2NzM2M30.9lPwP9oe8mvC3ZLYGUvjGJHCRhw5TcZgTd_sRXoP5aw';
+      
+      let supabase = null;
+      let currentUser = null;
+      let licences = [];
+      let sortDirection = {};
+
+      // Initialisation
+      document.addEventListener('DOMContentLoaded', async () => {
+        console.log('🚀 Initialisation de l\'application...');
+        
+        try {
+          // Initialiser Supabase
+          supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+          console.log('✅ Supabase initialisé');
+          
+          // Vérifier session existante
+          const sessionData = getStoredSession();
+          if (sessionData) {
+            currentUser = sessionData;
+            showApp();
+            await loadLicences();
+          }
+          
+        } catch (error) {
+          console.error('❌ Erreur initialisation:', error);
+          alert('Erreur lors de l\'initialisation');
+        }
+      });
+
+      // Gestion de la connexion
+      document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const username = document.getElementById('loginUser').value.trim().toLowerCase();
+        const password = document.getElementById('loginPass').value;
+        
+        console.log('🔑 Tentative de connexion:', username);
+        
+        // Authentification simple
+        if (username === 'admin' && password === 'admin') {
+          currentUser = {
+            login: 'admin',
+            role: 'admin',
+            nom: 'Administrateur'
+          };
+          
+          storeSession(currentUser);
+          showApp();
+          await loadLicences();
+          showNotification('Connexion réussie !', 'success');
+          
+        } else {
+          showNotification('Identifiants incorrects', 'danger');
+        }
+      });
+
+      // Afficher l'application
+      function showApp() {
+        document.getElementById('loginPage').classList.add('hidden');
+        document.getElementById('mainApp').classList.remove('hidden');
+        
+        // Mettre à jour l'interface utilisateur
+        document.getElementById('currentUser').textContent = 
+          `${currentUser.nom} (${currentUser.role})`;
+        
+        setupEventListeners();
+      }
+
+      // Configuration des événements
+      function setupEventListeners() {
+        // Déconnexion
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+          if (confirm('Êtes-vous sûr de vouloir vous déconnecter ?')) {
+            logout();
+          }
+        });
+
+        // Recherche
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+          filterLicences(e.target.value);
+        });
+
+        // Nouvelle licence
+        document.getElementById('addLicenceBtn').addEventListener('click', () => {
+          showNotification('Fonctionnalité en cours de développement', 'info');
+        });
+      }
+
+      // Charger les licences
+      async function loadLicences() {
+        try {
+          updateStatus('Chargement des licences...', false);
+          
+          const { data, error } = await supabase
+            .from('licences')
+            .select('*')
+            .order('created_at', { ascending: false });
+          
+          if (error) {
+            console.warn('Erreur Supabase, utilisation données de test:', error);
+            licences = getTestData();
+            updateStatus('Mode hors ligne', false);
+          } else {
+            licences = data || [];
+            updateStatus('En ligne', true);
+          }
+          
+          renderLicences();
+          updateLicenceCount();
+          checkExpirations();
+          
+          console.log(`✅ ${licences.length} licences chargées`);
+          
+        } catch (error) {
+          console.error('❌ Erreur chargement licences:', error);
+          licences = getTestData();
+          renderLicences();
+          updateStatus('Mode hors ligne', false);
+        }
+      }
+
+      // Données de test
+      function getTestData() {
+        return [
+          {
+            id: 1,
+            numero_licence: 'TEST-001',
+            logiciel: 'Microsoft Office',
+            version: '2023',
+            date_expiration: '2024-12-31',
+            prix: 299.99,
+            statut: 'active'
+          },
+          {
+            id: 2,
+            numero_licence: 'TEST-002',
+            logiciel: 'Adobe Creative Suite',
+            version: '2024',
+            date_expiration: '2024-08-15',
+            prix: 599.99,
+            statut: 'warning'
+          },
+          {
+            id: 3,
+            numero_licence: 'TEST-003',
+            logiciel: 'Windows Server',
+            version: '2022',
+            date_expiration: '2024-06-30',
+            prix: 1299.99,
+            statut: 'expired'
+          }
+        ];
+      }
+
+      // Afficher les licences dans le tableau
+      function renderLicences() {
+        const tbody = document.getElementById('licenceTableBody');
+        tbody.innerHTML = '';
+        
+        licences.forEach(licence => {
+          const row = createLicenceRow(licence);
+          tbody.appendChild(row);
+        });
+      }
+
+      // Créer une ligne de licence
+      function createLicenceRow(licence) {
+        const row = document.createElement('tr');
+        
+        // Déterminer le statut
+        const today = new Date();
+        const expiration = new Date(licence.date_expiration);
+        const daysUntilExpiration = Math.ceil((expiration - today) / (1000 * 60 * 60 * 24));
+        
+        let statusClass = '';
+        let statusText = 'Active';
+        
+        if (daysUntilExpiration < 0) {
+          statusClass = 'status-expired';
+          statusText = 'Expirée';
+        } else if (daysUntilExpiration <= 30) {
+          statusClass = 'status-warning';
+          statusText = 'Expire bientôt';
+        }
+        
+        row.className = statusClass;
+        row.innerHTML = `
+          <td>${licence.numero_licence}</td>
+          <td>${licence.logiciel}</td>
+          <td>${licence.version}</td>
+          <td>${formatDate(licence.date_expiration)}</td>
+          <td>${formatPrice(licence.prix)}</td>
+          <td>${statusText}</td>
+          <td>
+            <button class="btn-view" onclick="viewLicence(${licence.id})">👁️</button>
+            <button class="btn-edit" onclick="editLicence(${licence.id})">✏️</button>
+            <button class="btn-delete" onclick="deleteLicence(${licence.id})">🗑️</button>
+          </td>
+        `;
+        
+        return row;
+      }
+
+      // Vérifier les expirations
+      function checkExpirations() {
+        const today = new Date();
+        let expiredCount = 0;
+        let warningCount = 0;
+        
+        licences.forEach(licence => {
+          const expiration = new Date(licence.date_expiration);
+          const daysUntilExpiration = Math.ceil((expiration - today) / (1000 * 60 * 60 * 24));
+          
+          if (daysUntilExpiration < 0) {
+            expiredCount++;
+          } else if (daysUntilExpiration <= 30) {
+            warningCount++;
+          }
+        });
+        
+        // Afficher les alertes
+        const alertsContainer = document.getElementById('alertsContainer');
+        alertsContainer.innerHTML = '';
+        
+        if (expiredCount > 0) {
+          showAlert(`⚠️ ${expiredCount} licence(s) expirée(s)`, 'danger');
+        }
+        
+        if (warningCount > 0) {
+          showAlert(`⚡ ${warningCount} licence(s) expire(nt) dans moins de 30 jours`, 'warning');
+        }
+      }
+
+      // Afficher une alerte
+      function showAlert(message, type) {
+        const alertsContainer = document.getElementById('alertsContainer');
+        const alert = document.createElement('div');
+        alert.className = `alert ${type}`;
+        alert.innerHTML = `
+          <span>${message}</span>
+          <button onclick="this.parentElement.remove()">✕</button>
+        `;
+        alertsContainer.appendChild(alert);
+      }
+
+      // Fonctions utilitaires
+      function formatDate(dateString) {
+        return new Date(dateString).toLocaleDateString('fr-FR');
+      }
+
+      function formatPrice(price) {
+        return new Intl.NumberFormat('fr-FR', {
+          style: 'currency',
+          currency: 'EUR'
+        }).format(price);
+      }
+
+      function updateStatus(text, online) {
+        document.getElementById('statusText').textContent = text;
+        const indicator = document.getElementById('statusIndicator');
+        indicator.className = `status-indicator ${online ? 'online' : 'offline'}`;
+      }
+
+      function updateLicenceCount() {
+        document.getElementById('licenceCount').textContent = `${licences.length} licence(s)`;
+      }
+
+      // Filtrage
+      function filterLicences(searchTerm) {
+        const rows = document.querySelectorAll('#licenceTableBody tr');
+        const term = searchTerm.toLowerCase();
+        
+        rows.forEach(row => {
+          const text = row.textContent.toLowerCase();
+          row.style.display = text.includes(term) ? '' : 'none';
+        });
+      }
+
+      // Actions sur les licences
+      function viewLicence(id) {
+        const licence = licences.find(l => l.id === id);
+        if (licence) {
+          alert(`Licence: ${licence.logiciel} ${licence.version}\\nNuméro: ${licence.numero_licence}\\nExpiration: ${formatDate(licence.date_expiration)}\\nPrix: ${formatPrice(licence.prix)}`);
+        }
+      }
+
+      function editLicence(id) {
+        showNotification('Édition en cours de développement', 'info');
+      }
+
+      function deleteLicence(id) {
+        if (confirm('Êtes-vous sûr de vouloir supprimer cette licence ?')) {
+          showNotification('Suppression en cours de développement', 'info');
+        }
+      }
+
+      // Tri du tableau
+      function sortTable(column) {
+        const direction = sortDirection[column] === 'asc' ? 'desc' : 'asc';
+        sortDirection[column] = direction;
+        
+        licences.sort((a, b) => {
+          let aVal = a[column] || '';
+          let bVal = b[column] || '';
+          
+          if (column === 'prix') {
+            aVal = parseFloat(aVal);
+            bVal = parseFloat(bVal);
+          } else if (column === 'date_expiration') {
+            aVal = new Date(aVal);
+            bVal = new Date(bVal);
+          } else {
+            aVal = aVal.toString().toLowerCase();
+            bVal = bVal.toString().toLowerCase();
+          }
+          
+          if (direction === 'asc') {
+            return aVal > bVal ? 1 : -1;
+          } else {
+            return aVal < bVal ? 1 : -1;
+          }
+        });
+        
+        renderLicences();
+      }
+
+      // Gestion de session
+      function storeSession(userInfo) {
+        try {
+          const sessionData = JSON.stringify(userInfo);
+          document.cookie = `session_user=${btoa(sessionData)}; max-age=86400; path=/`;
+        } catch (error) {
+          console.warn('⚠️ Impossible de stocker la session:', error);
+        }
+      }
+
+      function getStoredSession() {
+        try {
+          const cookies = document.cookie.split(';');
+          const sessionCookie = cookies.find(c => c.trim().startsWith('session_user='));
+          
+          if (sessionCookie) {
+            const sessionData = sessionCookie.split('=')[1];
+            return JSON.parse(atob(sessionData));
+          }
+        } catch (error) {
+          console.warn('⚠️ Session invalide:', error);
+        }
+        
+        return null;
+      }
+
+      function logout() {
+        document.cookie = 'session_user=; max-age=0; path=/';
+        currentUser = null;
+        
+        document.getElementById('loginPage').classList.remove('hidden');
+        document.getElementById('mainApp').classList.add('hidden');
+        
+        // Reset du formulaire
+        document.getElementById('loginForm').reset();
+        
+        showNotification('Déconnexion réussie', 'info');
+      }
+
+      // Notifications toast
+      function showNotification(message, type = 'info') {
+        const container = document.getElementById('notificationsContainer') || createNotificationsContainer();
+        
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        toast.innerHTML = `
+          <div class="toast-content">
+            <span>${message}</span>
+            <button class="toast-close" onclick="this.parentElement.parentElement.remove()">✕</button>
+          </div>
+        `;
+        
+        container.appendChild(toast);
+        
+        // Animation d'apparition
+        setTimeout(() => toast.classList.add('show'), 100);
+        
+        // Suppression automatique après 5 secondes
+        setTimeout(() => {
+          toast.classList.add('removing');
+          setTimeout(() => toast.remove(), 300);
+        }, 5000);
+      }
+
+      function createNotificationsContainer() {
+        const container = document.createElement('div');
+        container.id = 'notificationsContainer';
+        container.className = 'notifications-container';
+        document.body.appendChild(container);
+        return container;
+      }
+    </script>
+  </body>
+</html>
