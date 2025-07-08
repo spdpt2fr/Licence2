@@ -1,4 +1,4 @@
-/* Styles pour l'application Licence2 v3.0 - Architecture Modulaire */
+/* Styles pour l'application Licence2 v3.0 - CRUD Complet */
 
 /* Reset et base */
 * {
@@ -39,6 +39,7 @@ body {
   backdrop-filter: blur(4px);
   z-index: 2000;
 }
+
 .login-form {
   background: #fff;
   padding: 30px;
@@ -49,11 +50,127 @@ body {
   gap: 15px;
   min-width: 280px;
 }
+
 .login-hint {
   margin-top: -5px;
   font-size: 0.8rem;
   color: #666;
   text-align: center;
+}
+
+/* Modal styles */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3000;
+}
+
+.modal-content {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  width: 90%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 25px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #f8fafc;
+  border-radius: 12px 12px 0 0;
+}
+
+.modal-header h3 {
+  margin: 0;
+  color: #2d3748;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #718096;
+  cursor: pointer;
+  padding: 5px;
+  line-height: 1;
+  transition: color 0.2s;
+}
+
+.close-btn:hover {
+  color: #e53e3e;
+}
+
+.modal-body {
+  padding: 25px;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 500;
+  color: #2d3748;
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: border-color 0.2s;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 25px;
+  padding-top: 20px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.badge {
+  display: inline-block;
+  padding: 4px 8px;
+  background: #edf2f7;
+  color: #4a5568;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: capitalize;
 }
 
 /* Header V3.0 */
@@ -133,19 +250,6 @@ body {
 .header-v3 .user-role {
   opacity: 0.8;
   font-size: 0.8rem;
-}
-
-/* Header - responsive */
-@media (max-width: 768px) {
-  .header-v3 {
-    flex-direction: column;
-    gap: 10px;
-    text-align: center;
-  }
-  
-  .header-v3 .header-left h1 {
-    font-size: 1.5rem;
-  }
 }
 
 /* Header legacy */
@@ -483,5 +587,14 @@ body {
   
   .search-container input {
     min-width: 200px;
+  }
+  
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .modal-content {
+    width: 95%;
+    margin: 20px;
   }
 }
