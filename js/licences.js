@@ -24,7 +24,7 @@ window.LicenceManager = {
     renderEmptyState(tbody) {
         const row = document.createElement('tr');
         row.innerHTML = `
-            <td colspan="9" style="text-align: center; color: #666; padding: 20px;">
+            <td colspan="10" style="text-align: center; color: #666; padding: 20px;">
                 Aucune licence trouvée dans la base de données
             </td>
         `;
@@ -43,6 +43,12 @@ window.LicenceManager = {
             statusClass = 'status-warning';
         }
         
+        // Gestion des commentaires avec troncature
+        const commentaires = licence.commentaires || '';
+        const commentairesDisplay = commentaires.length > 50 
+            ? `<span title="${window.AppUtils.escapeHtml(commentaires)}">${window.AppUtils.escapeHtml(commentaires.substring(0, 50))}...</span>`
+            : window.AppUtils.escapeHtml(commentaires);
+        
         row.className = statusClass;
         row.innerHTML = `
             <td>#${licence.id}</td>
@@ -53,6 +59,7 @@ window.LicenceManager = {
             <td>${window.AppUtils.formatDate(licence.expiration_date)}</td>
             <td>${window.AppUtils.formatPrice(licence.initial_cost)}</td>
             <td>${licence.seats || 0} poste(s)</td>
+            <td style="max-width: 150px; word-wrap: break-word;">${commentairesDisplay || '<em>Aucun</em>'}</td>
             <td>
                 <button class="btn-view" onclick="window.LicenceManager.viewLicence(${licence.id})" title="Voir">👁️</button>
                 <button class="btn-edit" onclick="window.LicenceManager.editLicence(${licence.id})" title="Modifier">✏️</button>
@@ -142,7 +149,7 @@ window.LicenceManager = {
         const fields = [
             'software_name', 'vendor', 'version', 'type', 
             'purchase_date', 'expiration_date', 'initial_cost', 
-            'seats', 'assigned_to'
+            'seats', 'assigned_to', 'commentaires'
         ];
         
         fields.forEach(field => {
@@ -267,7 +274,8 @@ window.LicenceManager = {
             expiration_date: formData.get('expiration_date') || null,
             initial_cost: parseFloat(formData.get('initial_cost')) || 0,
             seats: parseInt(formData.get('seats')) || 1,
-            assigned_to: formData.get('assigned_to')?.trim() || null
+            assigned_to: formData.get('assigned_to')?.trim() || null,
+            commentaires: formData.get('commentaires')?.trim() || null
         };
     },
 
@@ -292,7 +300,8 @@ window.LicenceManager = {
             `Expiration: ${window.AppUtils.formatDate(licence.expiration_date)}`,
             `Prix: ${window.AppUtils.formatPrice(licence.initial_cost)}`,
             `Postes: ${licence.seats}`,
-            `Assigné à: ${licence.assigned_to || 'Non assigné'}`
+            `Assigné à: ${licence.assigned_to || 'Non assigné'}`,
+            `Commentaires: ${licence.commentaires || 'Aucun commentaire'}`
         ].join('\n');
         
         window.UIManager.alert(details);
@@ -323,7 +332,7 @@ window.LicenceManager = {
             return;
         }
 
-        const headers = ['ID', 'Logiciel', 'Fournisseur', 'Version', 'Type', 'Date achat', 'Expiration', 'Prix', 'Postes', 'Assigné à'];
+        const headers = ['ID', 'Logiciel', 'Fournisseur', 'Version', 'Type', 'Date achat', 'Expiration', 'Prix', 'Postes', 'Assigné à', 'Commentaires'];
         
         const csvContent = [
             headers,
@@ -337,7 +346,8 @@ window.LicenceManager = {
                 licence.expiration_date || '',
                 licence.initial_cost || 0,
                 licence.seats || 0,
-                licence.assigned_to || ''
+                licence.assigned_to || '',
+                licence.commentaires || ''
             ])
         ].map(row => row.join(',')).join('\n');
 
