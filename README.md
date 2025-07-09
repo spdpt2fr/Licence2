@@ -41,21 +41,20 @@
 ### **Structure du Projet**
 ```
 Licence2/
-├── 📄 index.html              # Interface principale
-├── 📄 users-management.html   # Module administration utilisateurs
-├── 📄 style.css               # Styles principaux
-├── 📄 config.js               # Configuration Supabase
-├── 📄 package.json            # Métadonnées projet
 ├── 📄 .gitignore              # Configuration Git
 ├── 📄 README.md               # Documentation
+├── 📄 index.html              # Interface principale
+├── 📄 package.json            # Métadonnées projet
+├── 📄 style.css               # Styles principaux
+├── 📄 users-management.html   # Module administration utilisateurs
 │
 ├── 📁 js/                     # Scripts JavaScript
 │   ├── app.js                 # Application principale
 │   ├── auth.js                # Authentification
+│   ├── config.js              # Configuration Supabase
 │   ├── database.js            # Gestion base de données
 │   ├── licences.js            # Logique métier licences
-│   ├── ui.js                  # Interface utilisateur
-│   └── config.js              # Configuration JavaScript
+│   └── ui.js                  # Interface utilisateur
 │
 └── 📁 sql/                    # Scripts base de données
     └── create_users_table.sql # Structure table utilisateurs
@@ -93,7 +92,7 @@ Licence2/
 
 3. **Mettre à jour la configuration** :
    ```javascript
-   // Dans config.js
+   // Dans js/config.js
    const SUPABASE_URL = 'votre_url_supabase';
    const SUPABASE_KEY = 'votre_cle_api';
    ```
