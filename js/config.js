@@ -114,12 +114,5 @@ window.AppUtils = {
             "'": '&#039;'
         };
         return text.replace(/[&<>"']/g, m => map[m]);
-    },
-
-    // Troncature de texte avec ellipses
-    truncateText(text, maxLength) {
-        if (!text) return '';
-        if (text.length <= maxLength) return text;
-        return text.substring(0, maxLength) + '...';
     }
 };

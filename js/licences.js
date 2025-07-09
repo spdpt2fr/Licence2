@@ -22,7 +22,7 @@ window.LicenceManager = {
     renderEmptyState(tbody) {
         const row = document.createElement('tr');
         row.innerHTML = `
-            <td colspan="10" style="text-align: center; color: #666; padding: 20px;">
+            <td colspan="9" style="text-align: center; color: #666; padding: 20px;">
                 Aucune licence trouvée dans la base de données
             </td>
         `;
@@ -51,7 +51,6 @@ window.LicenceManager = {
             <td>${window.AppUtils.formatDate(licence.expiration_date)}</td>
             <td>${window.AppUtils.formatPrice(licence.initial_cost)}</td>
             <td>${licence.seats || 0} poste(s)</td>
-            <td class="comments-cell" title="${window.AppUtils.escapeHtml(licence.commentaires || '')}">${window.AppUtils.truncateText(licence.commentaires || '', 50)}</td>
             <td>
                 <button class="btn-view" onclick="window.LicenceManager.viewLicence(${licence.id})" title="Voir">👁️</button>
                 <button class="btn-edit" onclick="window.LicenceManager.editLicence(${licence.id})" title="Modifier">✏️</button>
@@ -125,7 +124,7 @@ window.LicenceManager = {
         const fields = [
             'software_name', 'vendor', 'version', 'type', 
             'purchase_date', 'expiration_date', 'initial_cost', 
-            'seats', 'assigned_to', 'commentaires'
+            'seats', 'assigned_to'
         ];
         
         fields.forEach(field => {
@@ -213,8 +212,7 @@ window.LicenceManager = {
             expiration_date: formData.get('expiration_date') || null,
             initial_cost: parseFloat(formData.get('initial_cost')) || 0,
             seats: parseInt(formData.get('seats')) || 1,
-            assigned_to: formData.get('assigned_to')?.trim() || null,
-            commentaires: formData.get('commentaires')?.trim() || null
+            assigned_to: formData.get('assigned_to')?.trim() || null
         };
     },
 
