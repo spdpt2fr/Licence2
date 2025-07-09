@@ -131,26 +131,17 @@ body {
 }
 
 .form-group input,
-.form-group select,
-.form-group textarea {
+.form-group select {
   width: 100%;
   padding: 10px 12px;
   border: 2px solid #e2e8f0;
   border-radius: 8px;
   font-size: 14px;
-  font-family: inherit;
   transition: border-color 0.2s;
 }
 
-.form-group textarea {
-  resize: vertical;
-  min-height: 60px;
-  line-height: 1.4;
-}
-
 .form-group input:focus,
-.form-group select:focus,
-.form-group textarea:focus {
+.form-group select:focus {
   outline: none;
   border-color: #667eea;
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
@@ -455,22 +446,6 @@ body {
   background: #fefcbf !important;
 }
 
-/* Cellule commentaires */
-.comments-cell {
-  max-width: 200px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: #4a5568;
-  font-style: italic;
-}
-
-.comments-cell:empty::before {
-  content: '-';
-  color: #a0aec0;
-  font-style: normal;
-}
-
 /* Boutons */
 .btn {
   padding: 10px 20px;
@@ -621,25 +596,5 @@ body {
   .modal-content {
     width: 95%;
     margin: 20px;
-  }
-  
-  /* Adaptation tableau mobile pour 10 colonnes */
-  .licence-table {
-    font-size: 12px;
-  }
-  
-  .licence-table th,
-  .licence-table td {
-    padding: 8px 6px;
-  }
-  
-  /* Masquer colonnes moins importantes sur mobile */
-  .licence-table th:nth-child(4), /* Version */
-  .licence-table td:nth-child(4),
-  .licence-table th:nth-child(7), /* Prix */
-  .licence-table td:nth-child(7),
-  .licence-table th:nth-child(9), /* Commentaires */
-  .licence-table td:nth-child(9) {
-    display: none;
   }
 }
