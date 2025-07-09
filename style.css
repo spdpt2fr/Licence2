@@ -16,7 +16,7 @@ body {
 }
 
 .container {
-  max-width: 1200px;
+  max-width: 1400px; /* Augmenté pour 10 colonnes */
   margin: 10px auto 20px auto;
   padding: 20px;
   background: rgba(255, 255, 255, 0.95);
@@ -366,7 +366,7 @@ body {
   cursor: pointer;
 }
 
-/* Tableau */
+/* Tableau optimisé pour 10 colonnes */
 .table-container {
   overflow-x: auto;
   border-radius: 12px;
@@ -419,6 +419,7 @@ body {
 
 .licence-table {
   width: 100%;
+  min-width: 1200px; /* Largeur minimale pour 10 colonnes */
   border-collapse: collapse;
   background: white;
 }
@@ -430,18 +431,32 @@ body {
 
 .licence-table th,
 .licence-table td {
-  padding: 12px 16px;
+  padding: 10px 8px; /* Padding réduit pour 10 colonnes */
   text-align: left;
   border-bottom: 1px solid #e2e8f0;
+  vertical-align: middle;
 }
 
 .licence-table th {
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
   cursor: pointer;
+  white-space: nowrap;
 }
+
+/* Largeurs spécifiques pour optimiser 10 colonnes */
+.licence-table th:nth-child(1) { width: 6%; }   /* ID */
+.licence-table th:nth-child(2) { width: 15%; }  /* Logiciel */
+.licence-table th:nth-child(3) { width: 12%; }  /* Fournisseur */
+.licence-table th:nth-child(4) { width: 8%; }   /* Version */
+.licence-table th:nth-child(5) { width: 10%; }  /* Type */
+.licence-table th:nth-child(6) { width: 10%; }  /* Expiration */
+.licence-table th:nth-child(7) { width: 10%; }  /* Prix */
+.licence-table th:nth-child(8) { width: 7%; }   /* Postes */
+.licence-table th:nth-child(9) { width: 12%; }  /* Commentaires */
+.licence-table th:nth-child(10) { width: 10%; } /* Actions */
 
 .licence-table tbody tr:hover {
   background: #f7fafc;
@@ -455,20 +470,25 @@ body {
   background: #fefcbf !important;
 }
 
-/* Cellule commentaires */
-.comments-cell {
-  max-width: 200px;
+/* Cellule commentaires optimisée */
+.licence-table td:nth-child(9) {
+  max-width: 120px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   color: #4a5568;
+  font-size: 0.85rem;
+}
+
+.licence-table td:nth-child(9):empty::before {
+  content: '-';
+  color: #a0aec0;
   font-style: italic;
 }
 
-.comments-cell:empty::before {
-  content: '-';
-  color: #a0aec0;
-  font-style: normal;
+/* Cellule actions optimisée */
+.licence-table td:nth-child(10) {
+  white-space: nowrap;
 }
 
 /* Boutons */
@@ -508,12 +528,13 @@ body {
 .btn-view,
 .btn-edit,
 .btn-delete {
-  padding: 6px 12px;
+  padding: 4px 8px; /* Boutons plus compacts */
   border: none;
   border-radius: 4px;
-  font-size: 12px;
+  font-size: 11px;
   cursor: pointer;
-  margin-right: 4px;
+  margin-right: 2px;
+  display: inline-block;
 }
 
 .btn-view {
@@ -592,13 +613,26 @@ body {
   display: none !important;
 }
 
-/* Responsive */
-@media (max-width: 768px) {
+/* Responsive amélioré pour 10 colonnes */
+@media (max-width: 1200px) {
   .container {
-    margin: 10px;
+    max-width: 100%;
+    margin: 5px;
     padding: 15px;
   }
   
+  .licence-table {
+    min-width: 1000px;
+    font-size: 13px;
+  }
+  
+  .licence-table th,
+  .licence-table td {
+    padding: 8px 6px;
+  }
+}
+
+@media (max-width: 768px) {
   .app-header {
     flex-direction: column;
     gap: 15px;
@@ -623,23 +657,45 @@ body {
     margin: 20px;
   }
   
-  /* Adaptation tableau mobile pour 10 colonnes */
+  /* Tableau mobile adapté : garder colonnes essentielles */
   .licence-table {
-    font-size: 12px;
+    min-width: 800px;
+    font-size: 11px;
   }
   
   .licence-table th,
   .licence-table td {
-    padding: 8px 6px;
+    padding: 6px 4px;
   }
   
-  /* Masquer colonnes moins importantes sur mobile */
+  /* Masquer SEULEMENT les colonnes vraiment moins importantes sur mobile */
   .licence-table th:nth-child(4), /* Version */
   .licence-table td:nth-child(4),
   .licence-table th:nth-child(7), /* Prix */
-  .licence-table td:nth-child(7),
-  .licence-table th:nth-child(9), /* Commentaires */
-  .licence-table td:nth-child(9) {
+  .licence-table td:nth-child(7) {
     display: none;
+  }
+  
+  /* GARDER la colonne commentaires visible sur mobile */
+  .licence-table th:nth-child(9),
+  .licence-table td:nth-child(9) {
+    max-width: 100px;
+    font-size: 10px;
+  }
+  
+  /* Boutons actions empilés sur mobile */
+  .licence-table td:nth-child(10) {
+    min-width: 80px;
+  }
+  
+  .btn-view,
+  .btn-edit,
+  .btn-delete {
+    padding: 3px 6px;
+    font-size: 10px;
+    margin: 1px;
+    display: block;
+    width: 100%;
+    margin-bottom: 2px;
   }
 }
