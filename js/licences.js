@@ -1,5 +1,7 @@
 // Gestion des licences - CRUD et affichage
 window.LicenceManager = {
+    // Flag pour empêcher la double soumission
+    isSaving: false,
     
     // Rend le tableau des licences
     renderLicences() {
@@ -90,6 +92,9 @@ window.LicenceManager = {
 
     // Ouvre la modal pour créer/éditer une licence
     openModal(licence = null) {
+        // Reset du flag de sauvegarde
+        this.isSaving = false;
+        
         window.AppState.editingLicenceId = licence ? licence.id : null;
         
         const modal = document.getElementById('licenceModal');
@@ -118,6 +123,19 @@ window.LicenceManager = {
         modal.classList.add('hidden');
         window.UIManager.resetForm('licenceForm');
         window.AppState.editingLicenceId = null;
+        
+        // Reset du flag de sauvegarde
+        this.isSaving = false;
+        
+        // Réactiver le bouton de sauvegarde
+        const saveBtn = document.getElementById('saveBtn');
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            const saveText = document.getElementById('saveText');
+            if (saveText) {
+                saveText.textContent = window.AppState.editingLicenceId ? 'Mettre à jour' : 'Créer';
+            }
+        }
     },
 
     // Remplit le formulaire avec les données d'une licence
@@ -147,13 +165,35 @@ window.LicenceManager = {
 
     // Sauvegarde une licence (création ou modification)
     async saveLicence() {
+        // Protection contre la double soumission
+        if (this.isSaving) {
+            console.log('🛡️ Protection: Sauvegarde déjà en cours, ignore la demande');
+            return;
+        }
+
         try {
+            // Marquer comme en cours de sauvegarde
+            this.isSaving = true;
+            
+            // Désactiver le bouton de sauvegarde
+            const saveBtn = document.getElementById('saveBtn');
+            const saveText = document.getElementById('saveText');
+            
+            if (saveBtn) {
+                saveBtn.disabled = true;
+            }
+            if (saveText) {
+                saveText.textContent = 'Sauvegarde...';
+            }
+
             const formData = this.getFormData();
             if (!this.validateForm(formData)) {
                 return;
             }
 
             const licenceData = this.formatLicenceData(formData);
+            
+            console.log('💾 Début sauvegarde licence:', licenceData);
             
             let success = false;
             if (window.AppState.editingLicenceId) {
@@ -163,12 +203,27 @@ window.LicenceManager = {
             }
 
             if (success) {
+                console.log('✅ Sauvegarde réussie, fermeture modal');
                 this.closeModal();
             }
 
         } catch (error) {
             console.error('❌ Erreur sauvegarde licence:', error);
             window.UIManager.showNotification(`Erreur: ${error.message}`, 'danger');
+        } finally {
+            // Toujours remettre le flag à false
+            this.isSaving = false;
+            
+            // Réactiver le bouton
+            const saveBtn = document.getElementById('saveBtn');
+            const saveText = document.getElementById('saveText');
+            
+            if (saveBtn) {
+                saveBtn.disabled = false;
+            }
+            if (saveText) {
+                saveText.textContent = window.AppState.editingLicenceId ? 'Mettre à jour' : 'Créer';
+            }
         }
     },
 
