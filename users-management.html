@@ -403,7 +403,7 @@
                 <td>${formatDate(user.last_login) || 'Jamais'}</td>
                 <td>
                     <button class="btn-edit" onclick="editUser(${user.id})" title="Modifier">✏️</button>
-                    <button class="btn-view" onclick="resetPassword(${user.id})" title="Reset mot de passe">🔑</button>
+                    <button class="btn-reset" onclick="resetPassword(${user.id})" title="Reset mot de passe">🔑</button>
                     <button class="btn-delete" onclick="deleteUser(${user.id})" title="Supprimer">🗑️</button>
                 </td>
             `;

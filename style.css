@@ -505,20 +505,15 @@ body {
   background: #cbd5e0;
 }
 
-.btn-view,
 .btn-edit,
-.btn-delete {
+.btn-delete,
+.btn-reset {
   padding: 6px 12px;
   border: none;
   border-radius: 4px;
   font-size: 12px;
   cursor: pointer;
   margin-right: 4px;
-}
-
-.btn-view {
-  background: #4299e1;
-  color: white;
 }
 
 .btn-edit {
@@ -531,9 +526,14 @@ body {
   color: white;
 }
 
-.btn-view:hover { background: #3182ce; }
+.btn-reset {
+  background: #4299e1;
+  color: white;
+}
+
 .btn-edit:hover { background: #2f855a; }
 .btn-delete:hover { background: #c53030; }
+.btn-reset:hover { background: #3182ce; }
 
 /* Notifications Toast */
 .notifications-container {
