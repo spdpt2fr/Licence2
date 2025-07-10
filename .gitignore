@@ -1,0 +1,54 @@
+# Logs et fichiers temporaires
+*.log
+.DS_Store
+Thumbs.db
+
+# Environnement de développement
+.env
+.env.local
+.env.development
+.env.production
+
+# Cache des navigateurs
+.cache/
+.tmp/
+
+# Fichiers de sauvegarde
+*.bak
+*.backup
+*~
+
+# Configuration locale (à ne pas versionner)
+config.local.js
+
+# Documentation générée
+docs/generated/
+
+# Tests
+coverage/
+.nyc_output/
+
+# Dépendances node (si utilisées dans le futur)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build artifacts
+dist/
+build/
+
+# Éditeurs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
