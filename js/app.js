@@ -92,7 +92,6 @@ window.App = {
     // Configure les fonctions globales accessibles depuis HTML
     setupGlobalFunctions() {
         // Fonctions pour les boutons du tableau
-        window.viewLicence = (id) => window.LicenceManager.viewLicence(id);
         window.editLicence = (id) => window.LicenceManager.editLicence(id);
         window.deleteLicence = (id) => window.LicenceManager.deleteLicence(id);
         window.sortTable = (column) => window.LicenceManager.sortTable(column);

@@ -61,7 +61,6 @@ window.LicenceManager = {
             <td>${licence.seats || 0} poste(s)</td>
             <td style="max-width: 150px; word-wrap: break-word;">${commentairesDisplay || '<em>Aucun</em>'}</td>
             <td>
-                <button class="btn-view" onclick="window.LicenceManager.viewLicence(${licence.id})" title="Voir">👁️</button>
                 <button class="btn-edit" onclick="window.LicenceManager.editLicence(${licence.id})" title="Modifier">✏️</button>
                 <button class="btn-delete" onclick="window.LicenceManager.deleteLicence(${licence.id})" title="Supprimer">🗑️</button>
             </td>
@@ -286,25 +285,6 @@ window.LicenceManager = {
         }
         
         await window.DatabaseManager.deleteLicence(licenceId);
-    },
-
-    // Affiche les détails d'une licence
-    viewLicence(licenceId) {
-        const licence = window.DatabaseManager.getLicenceById(licenceId);
-        if (!licence) return;
-        
-        const details = [
-            `Licence: ${licence.software_name} ${licence.version || ''}`,
-            `Fournisseur: ${licence.vendor}`,
-            `Type: ${licence.type}`,
-            `Expiration: ${window.AppUtils.formatDate(licence.expiration_date)}`,
-            `Prix: ${window.AppUtils.formatPrice(licence.initial_cost)}`,
-            `Postes: ${licence.seats}`,
-            `Assigné à: ${licence.assigned_to || 'Non assigné'}`,
-            `Commentaires: ${licence.commentaires || 'Aucun commentaire'}`
-        ].join('\n');
-        
-        window.UIManager.alert(details);
     },
 
     // Édite une licence
