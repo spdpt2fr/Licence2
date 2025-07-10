@@ -525,7 +525,6 @@ body {
   background: #cbd5e0;
 }
 
-.btn-view,
 .btn-edit,
 .btn-delete {
   padding: 4px 8px; /* Boutons plus compacts */
@@ -535,11 +534,6 @@ body {
   cursor: pointer;
   margin-right: 2px;
   display: inline-block;
-}
-
-.btn-view {
-  background: #4299e1;
-  color: white;
 }
 
 .btn-edit {
@@ -552,7 +546,6 @@ body {
   color: white;
 }
 
-.btn-view:hover { background: #3182ce; }
 .btn-edit:hover { background: #2f855a; }
 .btn-delete:hover { background: #c53030; }
 
@@ -688,7 +681,6 @@ body {
     min-width: 80px;
   }
   
-  .btn-view,
   .btn-edit,
   .btn-delete {
     padding: 3px 6px;
