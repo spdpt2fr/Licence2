@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authentification OAuth - Redirection</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .callback-container {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+        }
+        
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .message {
+            color: #333;
+            margin-bottom: 1rem;
+        }
+        
+        .error {
+            color: #dc3545;
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            padding: 1rem;
+            border-radius: 6px;
+            margin-top: 1rem;
+        }
+        
+        .success {
+            color: #155724;
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            padding: 1rem;
+            border-radius: 6px;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="callback-container">
+        <div class="spinner" id="spinner"></div>
+        <div class="message" id="message">Traitement de l'authentification...</div>
+        <div id="result"></div>
+    </div>
+
+    <script>
+        // Traitement du callback OAuth
+        async function handleOAuthCallback() {
+            const messageEl = document.getElementById('message');
+            const spinnerEl = document.getElementById('spinner');
+            const resultEl = document.getElementById('result');
+            
+            try {
+                const urlParams = new URLSearchParams(window.location.search);
+                const code = urlParams.get('code');
+                const state = urlParams.get('state');
+                const error = urlParams.get('error');
+                
+                if (error) {
+                    throw new Error(`Erreur OAuth: ${urlParams.get('error_description') || error}`);
+                }
+                
+                if (!code) {
+                    throw new Error('Code d\'autorisation manquant');
+                }
+                
+                // Vérification basique du state
+                if (!state) {
+                    throw new Error('State manquant - sécurité compromise');
+                }
+                
+                messageEl.textContent = 'Authentification réussie ! Redirection...';
+                
+                // Rediriger vers la page principale avec les paramètres
+                const mainUrl = new URL(window.location.origin);
+                mainUrl.searchParams.set('code', code);
+                mainUrl.searchParams.set('state', state);
+                
+                // Attendre un peu pour l'effet visuel
+                setTimeout(() => {
+                    window.location.href = mainUrl.toString();
+                }, 1500);
+                
+                resultEl.innerHTML = '<div class="success">✅ Redirection en cours...</div>';
+                
+            } catch (error) {
+                console.error('❌ Erreur callback OAuth:', error);
+                
+                spinnerEl.style.display = 'none';
+                messageEl.textContent = 'Erreur d\'authentification';
+                resultEl.innerHTML = `<div class="error">❌ ${error.message}</div>`;
+                
+                // Rediriger vers la page principale après erreur
+                setTimeout(() => {
+                    window.location.href = window.location.origin;
+                }, 3000);
+            }
+        }
+        
+        // Démarrer le traitement au chargement
+        document.addEventListener('DOMContentLoaded', handleOAuthCallback);
+    </script>
+</body>
+</html>

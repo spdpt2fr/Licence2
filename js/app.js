@@ -29,6 +29,7 @@ window.App = {
             'window.AppConfig',
             'window.AppState', 
             'window.AppUtils',
+            'window.SecurityPolicy',
             'window.AuthManager',
             'window.DatabaseManager',
             'window.UIManager',
@@ -58,15 +59,19 @@ window.App = {
     async initModules() {
         console.log('🔧 Initialisation des modules...');
 
-        // 1. Initialiser l'interface utilisateur
+        // 1. Initialiser les politiques de sécurité
+        window.SecurityPolicy.init();
+        console.log('✅ SecurityPolicy initialisé');
+
+        // 2. Initialiser l'interface utilisateur
         window.UIManager.init();
         console.log('✅ UIManager initialisé');
 
-        // 2. Initialiser l'authentification (SANS charger les licences)
+        // 3. Initialiser l'authentification (SANS charger les licences)
         window.AuthManager.init();
         console.log('✅ AuthManager initialisé');
 
-        // 3. Initialiser la base de données
+        // 4. Initialiser la base de données
         const dbConnected = await window.DatabaseManager.init();
         if (dbConnected) {
             console.log('✅ DatabaseManager initialisé');
@@ -74,19 +79,23 @@ window.App = {
             console.warn('⚠️ DatabaseManager initialisé en mode dégradé');
         }
 
-        // 4. Si l'utilisateur est déjà connecté, charger les licences MAINTENANT
+        // 5. Si l'utilisateur est déjà connecté, charger les licences MAINTENANT
         if (window.AuthManager.isAuthenticated()) {
             console.log('🔄 Utilisateur connecté - Chargement des licences...');
             await window.DatabaseManager.loadLicences();
         }
 
-        // 5. Configurer les fonctions globales
+        // 6. Configurer les fonctions globales
         this.setupGlobalFunctions();
         console.log('✅ Fonctions globales configurées');
 
-        // 6. Configurer les raccourcis clavier
+        // 7. Configurer les raccourcis clavier
         this.setupKeyboardShortcuts();
         console.log('✅ Raccourcis clavier configurés');
+
+        // 8. Nettoyer les anciennes sessions non sécurisées
+        window.SecurityPolicy.cleanupOldSessions();
+        console.log('✅ Nettoyage sécurisé effectué');
     },
 
     // Configure les fonctions globales accessibles depuis HTML
