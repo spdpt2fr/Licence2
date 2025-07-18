@@ -691,3 +691,207 @@ body {
     margin-bottom: 2px;
   }
 }
+/* === STYLES DE SÉCURITÉ === */
+
+/* Formulaire de connexion sécurisé */
+.login-form .form-group {
+  margin-bottom: 1rem;
+}
+
+.login-form input[type="email"],
+.login-form input[type="password"] {
+  width: 100%;
+  padding: 0.75rem;
+  border: 2px solid #e1e5e9;
+  border-radius: 5px;
+  font-size: 1rem;
+  transition: border-color 0.3s ease;
+}
+
+.login-form input[type="email"]:focus,
+.login-form input[type="password"]:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.security-notice {
+  margin-top: 1rem;
+  font-size: 0.85rem;
+  color: #28a745;
+  text-align: center;
+  font-weight: 500;
+}
+
+.login-attempts {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+  border-radius: 5px;
+  color: #721c24;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.login-attempts.hidden {
+  display: none;
+}
+
+/* Indicateurs de session sécurisée */
+.secure-session-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  background-color: rgba(40, 167, 69, 0.1);
+  border: 1px solid rgba(40, 167, 69, 0.3);
+  border-radius: 4px;
+  font-size: 0.8rem;
+  color: #28a745;
+}
+
+.token-status {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #28a745;
+  animation: pulse-green 2s infinite;
+}
+
+@keyframes pulse-green {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+
+.token-status.warning {
+  background-color: #ffc107;
+  animation: pulse-yellow 1s infinite;
+}
+
+@keyframes pulse-yellow {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+
+.token-status.expired {
+  background-color: #dc3545;
+  animation: pulse-red 0.5s infinite;
+}
+
+@keyframes pulse-red {
+  0% { opacity: 1; }
+  50% { opacity: 0.3; }
+  100% { opacity: 1; }
+}
+
+/* Messages de sécurité */
+.security-warning {
+  background-color: #fff3cd;
+  border: 1px solid #ffeaa7;
+  color: #856404;
+  padding: 1rem;
+  border-radius: 5px;
+  margin: 1rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.security-error {
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+  color: #721c24;
+  padding: 1rem;
+  border-radius: 5px;
+  margin: 1rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.security-success {
+  background-color: #d4edda;
+  border: 1px solid #c3e6cb;
+  color: #155724;
+  padding: 1rem;
+  border-radius: 5px;
+  margin: 1rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Protection contre les clics malveillants */
+.protected-action {
+  position: relative;
+}
+
+.protected-action:before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.protected-action:active:before {
+  pointer-events: all;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Styles pour les champs requis et validation */
+.form-group {
+  position: relative;
+}
+
+.form-group input.invalid {
+  border-color: #dc3545;
+  box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+}
+
+.form-group input.valid {
+  border-color: #28a745;
+  box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+}
+
+.validation-message {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 3px;
+}
+
+.validation-message.error {
+  background-color: #dc3545;
+  color: white;
+}
+
+.validation-message.success {
+  background-color: #28a745;
+  color: white;
+}
+
+/* Responsive pour les indicateurs de sécurité */
+@media (max-width: 768px) {
+  .secure-session-indicator {
+    font-size: 0.7rem;
+    padding: 0.2rem 0.4rem;
+  }
+  
+  .security-warning,
+  .security-error,
+  .security-success {
+    padding: 0.75rem;
+    font-size: 0.9rem;
+  }
+}

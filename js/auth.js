@@ -1,13 +1,5 @@
 // Gestion de l'authentification et des sessions
 window.AuthManager = {
-    
-    // Identifiants par défaut
-    DEFAULT_CREDENTIALS: {
-        username: 'admin',
-        password: 'admin',
-        role: 'admin',
-        nom: 'Administrateur'
-    },
 
     // Initialise l'authentification
     init() {
@@ -24,8 +16,8 @@ window.AuthManager = {
     },
 
     // Vérifie si une session existe déjà
-    checkExistingSession() {
-        const sessionData = this.getStoredSession();
+    async checkExistingSession() {
+        const sessionData = await this.getStoredSession();
         if (sessionData) {
             window.AppState.currentUser = sessionData;
             window.UIManager.showApp();
@@ -37,36 +29,88 @@ window.AuthManager = {
     async handleLogin(e) {
         e.preventDefault();
         
-        const username = document.getElementById('loginUser').value.trim().toLowerCase();
+        const email = document.getElementById('loginUser').value.trim().toLowerCase();
         const password = document.getElementById('loginPass').value;
         
-        if (username === this.DEFAULT_CREDENTIALS.username && 
-            password === this.DEFAULT_CREDENTIALS.password) {
-            
-            const user = {
-                login: this.DEFAULT_CREDENTIALS.username,
-                role: this.DEFAULT_CREDENTIALS.role,
-                nom: this.DEFAULT_CREDENTIALS.nom
-            };
-            
-            window.AppState.currentUser = user;
-            this.storeSession(user);
-            window.UIManager.showApp();
-            
-            // Charger les licences seulement si DatabaseManager est prêt
-            if (window.AppState.supabase) {
-                await window.DatabaseManager.loadLicences();
+        if (!email || !password) {
+            window.UIManager.showNotification('Veuillez saisir un email et un mot de passe', 'danger');
+            return;
+        }
+
+        // Validation email
+        if (!window.AppUtils.isValidEmail(email)) {
+            window.UIManager.showNotification('Format d\'email invalide', 'danger');
+            return;
+        }
+
+        try {
+            // Authentification Supabase sécurisée
+            const { data, error } = await window.AppState.supabase.auth.signInWithPassword({
+                email: email,
+                password: password
+            });
+
+            if (error) {
+                console.error('❌ Erreur authentification:', error.message);
+                window.UIManager.showNotification('Identifiants incorrects', 'danger');
+                return;
             }
-            
-            window.UIManager.showNotification(window.AppConfig.MESSAGES.LOGIN_SUCCESS, 'success');
-        } else {
-            window.UIManager.showNotification(window.AppConfig.MESSAGES.LOGIN_ERROR, 'danger');
+
+            if (data.user) {
+                // Récupérer les informations utilisateur depuis la base
+                const { data: userProfile, error: profileError } = await window.AppState.supabase
+                    .from(window.AppConfig.TABLES.USERS)
+                    .select('*')
+                    .eq('email', data.user.email)
+                    .single();
+
+                if (profileError || !userProfile) {
+                    console.error('❌ Profil utilisateur non trouvé:', profileError);
+                    await window.AppState.supabase.auth.signOut();
+                    window.UIManager.showNotification('Profil utilisateur non configuré', 'danger');
+                    return;
+                }
+
+                const user = {
+                    id: data.user.id,
+                    email: data.user.email,
+                    login: userProfile.login || data.user.email,
+                    role: userProfile.role || 'user',
+                    nom: userProfile.nom || 'Utilisateur',
+                    supabaseToken: data.session.access_token,
+                    tokenExpiry: new Date(data.session.expires_at * 1000)
+                };
+                
+                window.AppState.currentUser = user;
+                this.storeSession(user);
+                window.UIManager.showApp();
+                
+                // Charger les licences seulement si DatabaseManager est prêt
+                if (window.AppState.supabase) {
+                    await window.DatabaseManager.loadLicences();
+                }
+                
+                window.UIManager.showNotification(window.AppConfig.MESSAGES.LOGIN_SUCCESS, 'success');
+            }
+        } catch (error) {
+            console.error('❌ Erreur inattendue:', error);
+            window.UIManager.showNotification('Erreur de connexion', 'danger');
         }
     },
 
     // Gère la déconnexion
-    logout() {
+    async logout() {
         if (confirm(window.AppConfig.MESSAGES.LOGOUT_CONFIRM)) {
+            try {
+                // Déconnexion Supabase sécurisée
+                const { error } = await window.AppState.supabase.auth.signOut();
+                if (error) {
+                    console.warn('❌ Erreur déconnexion Supabase:', error.message);
+                }
+            } catch (error) {
+                console.warn('❌ Erreur déconnexion:', error);
+            }
+            
             this.clearSession();
             window.AppState.currentUser = null;
             window.UIManager.hideApp();
@@ -74,37 +118,68 @@ window.AuthManager = {
         }
     },
 
-    // Sauvegarde la session dans un cookie
+    // Sauvegarde la session sécurisée en localStorage
     storeSession(userInfo) {
         try {
-            const encodedData = btoa(JSON.stringify(userInfo));
-            document.cookie = `session_user=${encodedData}; max-age=86400; path=/`;
-            console.log('✅ Session sauvegardée');
+            // Supprimer les informations sensibles pour le stockage
+            const sessionData = {
+                id: userInfo.id,
+                email: userInfo.email,
+                login: userInfo.login,
+                role: userInfo.role,
+                nom: userInfo.nom,
+                tokenExpiry: userInfo.tokenExpiry.toISOString()
+            };
+            
+            // Stockage sécurisé en localStorage (pas de token)
+            localStorage.setItem('licence_session', JSON.stringify(sessionData));
+            console.log('✅ Session sécurisée sauvegardée');
         } catch (error) {
             console.warn('❌ Erreur sauvegarde session:', error);
         }
     },
 
-    // Récupère la session depuis les cookies
-    getStoredSession() {
+    // Récupère la session depuis localStorage et valide le token
+    async getStoredSession() {
         try {
-            const cookies = document.cookie.split(';');
-            const sessionCookie = cookies.find(c => c.trim().startsWith('session_user='));
+            const sessionData = localStorage.getItem('licence_session');
             
-            if (sessionCookie) {
-                const encodedData = sessionCookie.split('=')[1];
-                const userData = JSON.parse(atob(encodedData));
-                console.log('✅ Session récupérée:', userData.nom);
-                return userData;
+            if (!sessionData) {
+                return null;
             }
+
+            const userData = JSON.parse(sessionData);
+            
+            // Vérifier l'expiration
+            if (new Date(userData.tokenExpiry) < new Date()) {
+                console.log('🕐 Session expirée');
+                this.clearSession();
+                return null;
+            }
+
+            // Valider le token Supabase actuel
+            const { data: { user }, error } = await window.AppState.supabase.auth.getUser();
+            
+            if (error || !user || user.email !== userData.email) {
+                console.log('❌ Token Supabase invalide');
+                this.clearSession();
+                return null;
+            }
+
+            console.log('✅ Session valide récupérée:', userData.nom);
+            return userData;
+            
         } catch (error) {
             console.warn('❌ Session invalide:', error);
+            this.clearSession();
+            return null;
         }
-        return null;
     },
 
-    // Supprime la session
+    // Supprime la session sécurisée
     clearSession() {
+        localStorage.removeItem('licence_session');
+        // Nettoyer également les anciens cookies s'ils existent
         document.cookie = 'session_user=; max-age=0; path=/';
         console.log('🗑️ Session supprimée');
     },
@@ -131,6 +206,65 @@ window.AuthManager = {
         if (currentUserElement && window.AppState.currentUser) {
             const user = window.AppState.currentUser;
             currentUserElement.textContent = `${user.nom} (${user.role})`;
+        }
+    },
+
+    // Valide si le token est encore valide
+    async isTokenValid() {
+        if (!window.AppState.currentUser) {
+            return false;
+        }
+
+        try {
+            const { data: { user }, error } = await window.AppState.supabase.auth.getUser();
+            
+            if (error || !user) {
+                console.log('❌ Token Supabase invalide');
+                this.clearSession();
+                window.AppState.currentUser = null;
+                return false;
+            }
+
+            // Vérifier l'expiration de session locale
+            if (window.AppState.currentUser.tokenExpiry && 
+                new Date(window.AppState.currentUser.tokenExpiry) < new Date()) {
+                console.log('🕐 Session locale expirée');
+                await this.logout();
+                return false;
+            }
+
+            return true;
+        } catch (error) {
+            console.warn('❌ Erreur validation token:', error);
+            return false;
+        }
+    },
+
+    // Renouvelle automatiquement la session si nécessaire
+    async refreshSessionIfNeeded() {
+        if (!window.AppState.currentUser) {
+            return false;
+        }
+
+        try {
+            const { data, error } = await window.AppState.supabase.auth.refreshSession();
+            
+            if (error || !data.session) {
+                console.log('❌ Impossible de renouveler la session');
+                await this.logout();
+                return false;
+            }
+
+            // Mettre à jour les informations de session
+            window.AppState.currentUser.supabaseToken = data.session.access_token;
+            window.AppState.currentUser.tokenExpiry = new Date(data.session.expires_at * 1000);
+            this.storeSession(window.AppState.currentUser);
+            
+            console.log('✅ Session renouvelée automatiquement');
+            return true;
+        } catch (error) {
+            console.warn('❌ Erreur renouvellement session:', error);
+            return false;
         }
     }
 };
