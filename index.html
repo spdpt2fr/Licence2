@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Gestionnaire de Licences - RÉPARÉ</title>
+    <title>Gestionnaire de Licences - Auth Simple</title>
     <link rel="stylesheet" href="style.css" />
     <!-- Supabase CDN -->
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
@@ -49,6 +49,7 @@
         display: inline-flex;
         align-items: center;
         gap: 0.5rem;
+        cursor: pointer;
       }
       
       .admin-btn:hover {
@@ -80,20 +81,24 @@
         }
       }
     </style>
-  </head>  <body>
+  </head>
+  <body>
     <!-- Page de connexion -->
     <div id="loginPage" class="login-page">
       <form id="loginForm" class="login-form">
-        <h2>🔐 Connexion Sécurisée</h2>
+        <h2>🔐 Connexion</h2>
         <div class="form-group">
-          <input id="loginUser" type="email" placeholder="Email" required autocomplete="email" />
+          <input id="loginUser" type="text" placeholder="Identifiant" required autocomplete="username" />
         </div>
         <div class="form-group">
           <input id="loginPass" type="password" placeholder="Mot de passe" required autocomplete="current-password" />
         </div>
         <button type="submit" class="btn btn-primary">Se connecter</button>
         <div id="loginAttempts" class="login-attempts hidden"></div>
-        <p class="security-notice">🛡️ Connexion sécurisée via Supabase Auth</p>
+        <p class="security-notice">🛡️ Authentification simple avec base de données</p>
+        <p class="hint-text" style="font-size: 0.85rem; color: #888; margin-top: 1rem;">
+          Identifiants par défaut : admin / admin
+        </p>
       </form>
     </div>
 
@@ -116,14 +121,15 @@
       <div id="adminMenu" class="admin-menu">
         <h3 class="admin-menu-title">🛠️ Administration</h3>
         <div class="admin-menu-buttons">
-          <a href="users-management.html" class="admin-btn">
+          <button id="usersManagementBtn" class="admin-btn">
             👥 <span class="text">Utilisateurs</span>
-          </a>
-          <button class="admin-btn" onclick="showComingSoon()">
+          </button>
+          <button class="admin-btn" onclick="window.UIManager.showNotification('Fonctionnalité à venir', 'info')">
             ⚙️ <span class="text">Paramètres</span>
           </button>
         </div>
       </div>
+
       <!-- Alertes -->
       <div id="alertsContainer"></div>
 
@@ -166,6 +172,7 @@
         </table>
       </div>
     </div>
+
     <!-- Modal pour ajouter/éditer une licence -->
     <div id="licenceModal" class="modal hidden">
       <div class="modal-content">
@@ -200,7 +207,8 @@
                 <option value="educational">Éducation</option>
               </select>
             </div>
-          </div>          
+          </div>
+          
           <div class="form-row">
             <div class="form-group">
               <label for="purchase_date">Date d'achat</label>
@@ -247,13 +255,93 @@
       </div>
     </div>
 
+    <!-- Modal de gestion des utilisateurs -->
+    <div id="usersModal" class="modal hidden">
+      <div class="modal-content" style="max-width: 800px;">
+        <div class="modal-header">
+          <h3>👥 Gestion des Utilisateurs</h3>
+          <button id="closeUsersModalBtn" class="close-btn">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="table-actions" style="margin-bottom: 1rem;">
+            <button id="addUserBtn" class="btn btn-primary">➕ Nouvel utilisateur</button>
+            <button id="refreshUsersBtn" class="btn btn-secondary">🔄 Actualiser</button>
+          </div>
+          <table class="licence-table">
+            <thead>
+              <tr>
+                <th>Login</th>
+                <th>Nom</th>
+                <th>Email</th>
+                <th>Rôle</th>
+                <th>Statut</th>
+                <th>Dernière connexion</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="usersTableBody">
+              <!-- Les utilisateurs seront injectés ici -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal pour ajouter/éditer un utilisateur -->
+    <div id="userFormModal" class="modal hidden">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 id="userModalTitle">Nouvel utilisateur</h3>
+          <button id="closeUserFormBtn" class="close-btn">✕</button>
+        </div>
+        <form id="userForm" class="modal-body">
+          <div class="form-group">
+            <label for="user_login">Identifiant *</label>
+            <input type="text" id="user_login" name="login" required />
+          </div>
+          
+          <div class="form-group">
+            <label for="user_nom">Nom complet *</label>
+            <input type="text" id="user_nom" name="nom" required />
+          </div>
+          
+          <div class="form-group">
+            <label for="user_email">Email *</label>
+            <input type="email" id="user_email" name="email" required />
+          </div>
+          
+          <div class="form-group">
+            <label for="user_password">Mot de passe *</label>
+            <input type="password" id="user_password" name="password" placeholder="Minimum 6 caractères" />
+            <small id="passwordHelp" style="color: #888;">Laissez vide pour conserver le mot de passe actuel</small>
+          </div>
+          
+          <div class="form-group">
+            <label for="user_role">Rôle *</label>
+            <select id="user_role" name="role" required>
+              <option value="user">Utilisateur</option>
+              <option value="manager">Manager</option>
+              <option value="admin">Administrateur</option>
+            </select>
+          </div>
+          
+          <div class="modal-footer">
+            <button type="button" id="cancelUserBtn" class="btn btn-secondary">Annuler</button>
+            <button type="submit" id="saveUserBtn" class="btn btn-primary">
+              <span id="saveUserText">Créer</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
     <!-- Scripts JavaScript modulaires -->
     <script src="js/config.js"></script>
-    <script src="js/security-policy.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/database.js"></script>
     <script src="js/ui.js"></script>
     <script src="js/licences.js"></script>
+    <script src="js/users-ui.js"></script>
     <script src="js/app.js"></script>
   </body>
 </html>
