@@ -1,4 +1,4 @@
-// Gestion de l'authentification et des sessions
+// Gestion de l'authentification simple sans Supabase Auth
 window.AuthManager = {
 
     // Initialise l'authentification
@@ -16,81 +16,79 @@ window.AuthManager = {
     },
 
     // Vérifie si une session existe déjà
-    async checkExistingSession() {
-        const sessionData = await this.getStoredSession();
+    checkExistingSession() {
+        const sessionData = this.getStoredSession();
         if (sessionData) {
             window.AppState.currentUser = sessionData;
             window.UIManager.showApp();
-            // NE PAS charger les licences ici - sera fait après l'init de DatabaseManager
         }
+    },
+
+    // Hash SHA256 simple pour le mot de passe
+    async hashPassword(password) {
+        const encoder = new TextEncoder();
+        const data = encoder.encode(password);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        return hashHex;
     },
 
     // Gère la connexion
     async handleLogin(e) {
         e.preventDefault();
         
-        const email = document.getElementById('loginUser').value.trim().toLowerCase();
+        const login = document.getElementById('loginUser').value.trim().toLowerCase();
         const password = document.getElementById('loginPass').value;
         
-        if (!email || !password) {
-            window.UIManager.showNotification('Veuillez saisir un email et un mot de passe', 'danger');
-            return;
-        }
-
-        // Validation email
-        if (!window.AppUtils.isValidEmail(email)) {
-            window.UIManager.showNotification('Format d\'email invalide', 'danger');
+        if (!login || !password) {
+            window.UIManager.showNotification('Veuillez saisir un identifiant et un mot de passe', 'danger');
             return;
         }
 
         try {
-            // Authentification Supabase sécurisée
-            const { data, error } = await window.AppState.supabase.auth.signInWithPassword({
-                email: email,
-                password: password
-            });
+            // Hash du mot de passe
+            const passwordHash = await this.hashPassword(password);
+            
+            // Vérification dans la base de données via la fonction SQL
+            const { data, error } = await window.AppState.supabase
+                .rpc('verify_user_password', {
+                    p_login: login,
+                    p_password_hash: passwordHash
+                });
 
             if (error) {
-                console.error('❌ Erreur authentification:', error.message);
-                window.UIManager.showNotification('Identifiants incorrects', 'danger');
+                console.error('❌ Erreur authentification:', error);
+                window.UIManager.showNotification('Erreur de connexion', 'danger');
                 return;
             }
 
-            if (data.user) {
-                // Récupérer les informations utilisateur depuis la base
-                const { data: userProfile, error: profileError } = await window.AppState.supabase
-                    .from(window.AppConfig.TABLES.USERS)
-                    .select('*')
-                    .eq('email', data.user.email)
-                    .single();
-
-                if (profileError || !userProfile) {
-                    console.error('❌ Profil utilisateur non trouvé:', profileError);
-                    await window.AppState.supabase.auth.signOut();
-                    window.UIManager.showNotification('Profil utilisateur non configuré', 'danger');
-                    return;
-                }
-
+            if (data && data.length > 0) {
+                const userProfile = data[0];
+                
+                // Créer l'objet utilisateur
                 const user = {
-                    id: data.user.id,
-                    email: data.user.email,
-                    login: userProfile.login || data.user.email,
-                    role: userProfile.role || 'user',
-                    nom: userProfile.nom || 'Utilisateur',
-                    supabaseToken: data.session.access_token,
-                    tokenExpiry: new Date(data.session.expires_at * 1000)
+                    id: userProfile.id,
+                    login: userProfile.login,
+                    email: userProfile.email,
+                    nom: userProfile.nom,
+                    role: userProfile.role,
+                    sessionExpiry: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 heures
                 };
                 
                 window.AppState.currentUser = user;
                 this.storeSession(user);
                 window.UIManager.showApp();
                 
-                // Charger les licences seulement si DatabaseManager est prêt
-                if (window.AppState.supabase) {
+                // Charger les licences
+                if (window.DatabaseManager) {
                     await window.DatabaseManager.loadLicences();
                 }
                 
                 window.UIManager.showNotification(window.AppConfig.MESSAGES.LOGIN_SUCCESS, 'success');
+                this.updateUserDisplay();
+            } else {
+                window.UIManager.showNotification('Identifiants incorrects', 'danger');
             }
         } catch (error) {
             console.error('❌ Erreur inattendue:', error);
@@ -99,18 +97,8 @@ window.AuthManager = {
     },
 
     // Gère la déconnexion
-    async logout() {
+    logout() {
         if (confirm(window.AppConfig.MESSAGES.LOGOUT_CONFIRM)) {
-            try {
-                // Déconnexion Supabase sécurisée
-                const { error } = await window.AppState.supabase.auth.signOut();
-                if (error) {
-                    console.warn('❌ Erreur déconnexion Supabase:', error.message);
-                }
-            } catch (error) {
-                console.warn('❌ Erreur déconnexion:', error);
-            }
-            
             this.clearSession();
             window.AppState.currentUser = null;
             window.UIManager.hideApp();
@@ -118,29 +106,27 @@ window.AuthManager = {
         }
     },
 
-    // Sauvegarde la session sécurisée en localStorage
+    // Sauvegarde la session en localStorage
     storeSession(userInfo) {
         try {
-            // Supprimer les informations sensibles pour le stockage
             const sessionData = {
                 id: userInfo.id,
-                email: userInfo.email,
                 login: userInfo.login,
-                role: userInfo.role,
+                email: userInfo.email,
                 nom: userInfo.nom,
-                tokenExpiry: userInfo.tokenExpiry.toISOString()
+                role: userInfo.role,
+                sessionExpiry: userInfo.sessionExpiry.toISOString()
             };
             
-            // Stockage sécurisé en localStorage (pas de token)
             localStorage.setItem('licence_session', JSON.stringify(sessionData));
-            console.log('✅ Session sécurisée sauvegardée');
+            console.log('✅ Session sauvegardée');
         } catch (error) {
             console.warn('❌ Erreur sauvegarde session:', error);
         }
     },
 
-    // Récupère la session depuis localStorage et valide le token
-    async getStoredSession() {
+    // Récupère la session depuis localStorage
+    getStoredSession() {
         try {
             const sessionData = localStorage.getItem('licence_session');
             
@@ -151,17 +137,8 @@ window.AuthManager = {
             const userData = JSON.parse(sessionData);
             
             // Vérifier l'expiration
-            if (new Date(userData.tokenExpiry) < new Date()) {
+            if (new Date(userData.sessionExpiry) < new Date()) {
                 console.log('🕐 Session expirée');
-                this.clearSession();
-                return null;
-            }
-
-            // Valider le token Supabase actuel
-            const { data: { user }, error } = await window.AppState.supabase.auth.getUser();
-            
-            if (error || !user || user.email !== userData.email) {
-                console.log('❌ Token Supabase invalide');
                 this.clearSession();
                 return null;
             }
@@ -176,11 +153,9 @@ window.AuthManager = {
         }
     },
 
-    // Supprime la session sécurisée
+    // Supprime la session
     clearSession() {
         localStorage.removeItem('licence_session');
-        // Nettoyer également les anciens cookies s'ils existent
-        document.cookie = 'session_user=; max-age=0; path=/';
         console.log('🗑️ Session supprimée');
     },
 
@@ -209,62 +184,122 @@ window.AuthManager = {
         }
     },
 
-    // Valide si le token est encore valide
-    async isTokenValid() {
-        if (!window.AppState.currentUser) {
-            return false;
-        }
+    // Gestion des utilisateurs (CRUD)
+    UsersManager: {
+        // Récupère tous les utilisateurs
+        async getUsers() {
+            try {
+                const { data, error } = await window.AppState.supabase
+                    .from('users_view')
+                    .select('*')
+                    .order('created_at', { ascending: false });
 
-        try {
-            const { data: { user }, error } = await window.AppState.supabase.auth.getUser();
-            
-            if (error || !user) {
-                console.log('❌ Token Supabase invalide');
-                this.clearSession();
-                window.AppState.currentUser = null;
+                if (error) throw error;
+                return data;
+            } catch (error) {
+                console.error('❌ Erreur récupération utilisateurs:', error);
+                return [];
+            }
+        },
+
+        // Crée un nouvel utilisateur
+        async createUser(userData) {
+            try {
+                const passwordHash = await window.AuthManager.hashPassword(userData.password);
+                
+                const { data, error } = await window.AppState.supabase
+                    .rpc('create_user', {
+                        p_login: userData.login,
+                        p_password_hash: passwordHash,
+                        p_email: userData.email,
+                        p_nom: userData.nom,
+                        p_role: userData.role || 'user'
+                    });
+
+                if (error) throw error;
+                
+                window.UIManager.showNotification('Utilisateur créé avec succès', 'success');
+                return data;
+            } catch (error) {
+                console.error('❌ Erreur création utilisateur:', error);
+                window.UIManager.showNotification('Erreur lors de la création', 'danger');
+                return null;
+            }
+        },
+
+        // Met à jour un utilisateur
+        async updateUser(userId, updates) {
+            try {
+                const { data, error } = await window.AppState.supabase
+                    .from('users')
+                    .update({
+                        nom: updates.nom,
+                        email: updates.email,
+                        role: updates.role,
+                        active: updates.active
+                    })
+                    .eq('id', userId);
+
+                if (error) throw error;
+                
+                window.UIManager.showNotification('Utilisateur mis à jour', 'success');
+                return data;
+            } catch (error) {
+                console.error('❌ Erreur mise à jour utilisateur:', error);
+                window.UIManager.showNotification('Erreur lors de la mise à jour', 'danger');
+                return null;
+            }
+        },
+
+        // Change le mot de passe d'un utilisateur
+        async changePassword(userId, newPassword) {
+            try {
+                const passwordHash = await window.AuthManager.hashPassword(newPassword);
+                
+                const { data, error } = await window.AppState.supabase
+                    .rpc('update_user_password', {
+                        p_user_id: userId,
+                        p_new_password_hash: passwordHash
+                    });
+
+                if (error) throw error;
+                
+                window.UIManager.showNotification('Mot de passe modifié', 'success');
+                return true;
+            } catch (error) {
+                console.error('❌ Erreur changement mot de passe:', error);
+                window.UIManager.showNotification('Erreur lors du changement', 'danger');
                 return false;
             }
+        },
 
-            // Vérifier l'expiration de session locale
-            if (window.AppState.currentUser.tokenExpiry && 
-                new Date(window.AppState.currentUser.tokenExpiry) < new Date()) {
-                console.log('🕐 Session locale expirée');
-                await this.logout();
+        // Désactive/Active un utilisateur
+        async toggleUserStatus(userId, active) {
+            try {
+                const { data, error } = await window.AppState.supabase
+                    .from('users')
+                    .update({ active: active })
+                    .eq('id', userId);
+
+                if (error) throw error;
+                
+                const status = active ? 'activé' : 'désactivé';
+                window.UIManager.showNotification(`Utilisateur ${status}`, 'success');
+                return data;
+            } catch (error) {
+                console.error('❌ Erreur changement statut:', error);
+                window.UIManager.showNotification('Erreur lors du changement', 'danger');
+                return null;
+            }
+        },
+
+        // Supprime un utilisateur (désactivation)
+        async deleteUser(userId) {
+            if (!confirm('Êtes-vous sûr de vouloir désactiver cet utilisateur ?')) {
                 return false;
             }
-
-            return true;
-        } catch (error) {
-            console.warn('❌ Erreur validation token:', error);
-            return false;
-        }
-    },
-
-    // Renouvelle automatiquement la session si nécessaire
-    async refreshSessionIfNeeded() {
-        if (!window.AppState.currentUser) {
-            return false;
-        }
-
-        try {
-            const { data, error } = await window.AppState.supabase.auth.refreshSession();
             
-            if (error || !data.session) {
-                console.log('❌ Impossible de renouveler la session');
-                await this.logout();
-                return false;
-            }
-
-            // Mettre à jour les informations de session
-            window.AppState.currentUser.supabaseToken = data.session.access_token;
-            window.AppState.currentUser.tokenExpiry = new Date(data.session.expires_at * 1000);
-            this.storeSession(window.AppState.currentUser);
-            
-            console.log('✅ Session renouvelée automatiquement');
-            return true;
-        } catch (error) {
-            console.warn('❌ Erreur renouvellement session:', error);
-            return false;
+            return await this.toggleUserStatus(userId, false);
         }
     }
 };
