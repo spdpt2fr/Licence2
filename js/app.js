@@ -1,4 +1,4 @@
-// Point d'entrée principal de l'application
+// Point d'entrée principal de l'application - VERSION CORRIGÉE
 window.App = {
     
     // Initialise l'application
@@ -22,14 +22,14 @@ window.App = {
         }
     },
 
-    // Vérifie que toutes les dépendances sont disponibles
+    // Vérifie que toutes les dépendances sont disponibles - CORRIGÉ
     checkDependencies() {
         const required = [
             'window.supabase',
             'window.AppConfig',
             'window.AppState', 
             'window.AppUtils',
-            'window.SecurityPolicy',
+            // 'window.SecurityPolicy', // ← RETIRÉ CAR N'EXISTE PAS
             'window.AuthManager',
             'window.DatabaseManager',
             'window.UIManager',
@@ -40,10 +40,10 @@ window.App = {
             const parts = dep.split('.');
             let obj = window;
             for (const part of parts.slice(1)) {
-                if (!obj[part]) return true;
+                if (!obj[part]) return true; // ← Cette ligne est CORRECTE
                 obj = obj[part];
             }
-            return false;
+            return false; // ← Retourne false si la dépendance est TROUVÉE
         });
 
         if (missing.length > 0) {
@@ -55,23 +55,19 @@ window.App = {
         return true;
     },
 
-    // Initialise tous les modules
+    // Initialise tous les modules - SIMPLIFIÉ
     async initModules() {
         console.log('🔧 Initialisation des modules...');
 
-        // 1. Initialiser les politiques de sécurité
-        window.SecurityPolicy.init();
-        console.log('✅ SecurityPolicy initialisé');
-
-        // 2. Initialiser l'interface utilisateur
+        // 1. Initialiser l'interface utilisateur
         window.UIManager.init();
         console.log('✅ UIManager initialisé');
 
-        // 3. Initialiser l'authentification (SANS charger les licences)
+        // 2. Initialiser l'authentification
         window.AuthManager.init();
         console.log('✅ AuthManager initialisé');
 
-        // 4. Initialiser la base de données
+        // 3. Initialiser la base de données
         const dbConnected = await window.DatabaseManager.init();
         if (dbConnected) {
             console.log('✅ DatabaseManager initialisé');
@@ -79,10 +75,16 @@ window.App = {
             console.warn('⚠️ DatabaseManager initialisé en mode dégradé');
         }
 
-        // 5. Si l'utilisateur est déjà connecté, charger les licences MAINTENANT
+        // 4. Si l'utilisateur est déjà connecté, charger les licences
         if (window.AuthManager.isAuthenticated()) {
             console.log('🔄 Utilisateur connecté - Chargement des licences...');
             await window.DatabaseManager.loadLicences();
+        }
+
+        // 5. Initialiser l'interface utilisateurs (si elle existe)
+        if (window.UsersUI) {
+            window.UsersUI.init();
+            console.log('✅ UsersUI initialisé');
         }
 
         // 6. Configurer les fonctions globales
@@ -92,10 +94,6 @@ window.App = {
         // 7. Configurer les raccourcis clavier
         this.setupKeyboardShortcuts();
         console.log('✅ Raccourcis clavier configurés');
-
-        // 8. Nettoyer les anciennes sessions non sécurisées
-        window.SecurityPolicy.cleanupOldSessions();
-        console.log('✅ Nettoyage sécurisé effectué');
     },
 
     // Configure les fonctions globales accessibles depuis HTML
